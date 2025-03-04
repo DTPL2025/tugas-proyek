@@ -1,8 +1,18 @@
-from flask import render_template, redirect, url_for
+import os
+import secrets
+from flask import url_for, render_template, flash, redirect, request
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
-from app.forms import LoginForm, RegisterForm
-from app.models import User
+from app.forms import LoginForm, RegisterForm, ProductForm
+from app.models import User, Product
+
+def save_image(form_image):
+    random_hex = secrets.token_hex(8)
+    _, f_ext = os.path.splitext(form_image.filename)
+    image_fn = random_hex + f_ext
+    image_path = os.path.join(app.root_path, 'static/product_images', image_fn)
+    form_image.save(image_path)
+    return image_fn
 
 @app.route('/')
 def home():
@@ -32,7 +42,7 @@ def register():
     form = RegisterForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        new_user = User(username=form.username.data, password=hashed_password)
+        new_user = User(username=form.username.data, password=hashed_password, role=form.role.data)
         db.session.add(new_user)
         db.session.commit()
         return redirect(url_for('login'))
@@ -43,3 +53,22 @@ def register():
 def logout():
     logout_user()
     return redirect(url_for('home'))
+
+@app.route('/product/new', methods=['GET', 'POST'])
+@login_required
+def create_product():
+    if current_user.role != 'Penjual':
+        flash('You do not have permission to access this page.', 'danger')
+        return redirect(url_for('home'))
+    form = ProductForm()
+    if form.validate_on_submit():
+        if form.image.data and form.image.data.filename != '':
+            image_file = save_image(form.image.data)
+        else:
+            image_file = 'default.jpg'
+        product = Product(name=form.name.data, price=form.price.data, stock=form.stock.data, weight=form.weight.data, image_file=image_file, seller_id=current_user.id)
+        db.session.add(product)
+        db.session.commit()
+        flash('Your product has been created!', 'success')
+        return redirect(url_for('create_product'))
+    return render_template('create_product.jinja', title='New Product', form=form)

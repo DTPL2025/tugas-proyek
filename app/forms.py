@@ -1,8 +1,9 @@
 from flask_wtf import FlaskForm
 from wtforms_alchemy import ModelForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Length, EqualTo, ValidationError
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, FileField
+from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange
 from app.models import User
+from flask_wtf.file import FileAllowed
 
 class RegisterForm(ModelForm, FlaskForm):
     class Meta:
@@ -21,3 +22,11 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()],
                              render_kw={"placeholder": "Password"})
     submit = SubmitField('Login')
+
+class ProductForm(FlaskForm):
+    name = StringField('Product Name', validators=[DataRequired()])
+    price = IntegerField('Price', validators=[DataRequired(), NumberRange(min=0)])
+    stock = IntegerField('Stock', validators=[DataRequired(), NumberRange(min=0)])
+    image = FileField('Product Image', validators=[FileAllowed(['jpg', 'png'])])
+    weight = IntegerField('Weight (gr)', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Add Product')
