@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex items-center justify-center h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+        <h1 class="text-2xl font-bold mb-6 text-center">Login</h1>
+        <form action="" method="post" class="space-y-4">
+            {{ form.hidden_tag() }}
+            <div>
+                {{ form.username.label(class="block text-gray-700") }}
+                {{ form.username(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            <div>
+                {{ form.password.label(class="block text-gray-700") }}
+                {{ form.password(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            <div>
+                {{ form.submit(class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600") }}
+            </div>
+            {% if error %}
+                <p class="text-red-500">{{ error }}</p>
+            {% endif %}
+            {% if form.errors %}
+                <ul class="text-red-500">
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </form>
+        <p class="mt-4 text-center">
+            <a href="{{ url_for('register') }}" class="text-blue-500 hover:underline">Register page</a>
+        </p>
+    </div>
+</body>
+</html>

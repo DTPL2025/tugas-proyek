@@ -6,7 +6,10 @@ from app.models import User
 
 @app.route('/')
 def home():
-    return render_template('home.jinja')
+    if current_user.is_authenticated:
+        return render_template('home.jinja', username=current_user.username)
+    else:
+        return render_template('home.jinja')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
