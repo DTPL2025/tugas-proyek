@@ -1,5 +1,5 @@
 from flask import render_template, redirect, url_for
-from flask_login import current_user, login_required, login_user
+from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
 from app.forms import LoginForm, RegisterForm
 from app.models import User
@@ -37,3 +37,9 @@ def register():
         db.session.commit()
         return redirect(url_for('login'))
     return render_template('register.jinja', form=form)
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('home'))
