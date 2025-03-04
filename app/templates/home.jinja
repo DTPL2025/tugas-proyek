@@ -1,20 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Home page</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
-<body class="bg-gray-100 text-gray-800">
+{% extends "base.jinja" %}
+{% block title %}Home Page{% endblock %}
+{% block content %}
 <nav>
-        {% if username %}
-            <h1>Welcome, {{ username }}!</h1>
-            <a href="{{ url_for('logout') }}">Logout</a>
-        {% else %}
-            <a href="{{ url_for('register') }}">Register</a>
-            <a href="{{ url_for('login') }}">Login</a>
-        {% endif %}
-    </nav>
-</body>
-</html>
+    {% if username %}
+        <h1>Welcome, {{ username }}!</h1>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+        <a href="{{ url_for('register') }}">Register</a>
+        <a href="{{ url_for('login') }}">Login</a>
+    {% endif %}
+</nav>
+{% endblock %}
