@@ -1,17 +1,17 @@
 from flask import render_template, redirect, url_for
-from flask_login import current_user
+from flask_login import current_user, login_required
 from app import app, db, bcrypt
 from app.forms import RegisterForm
 from app.models import User
 
 @app.route('/')
 def home():
-    return render_template('home.jinja')
+    return render_template('home.jinja', username=current_user.username)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('home'))
     form = RegisterForm()
     if form.validate_on_submit():
         hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')

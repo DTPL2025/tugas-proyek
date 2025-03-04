@@ -7,6 +7,14 @@
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
 <body class="bg-gray-100 text-gray-800">
-Hello, world!
+<nav>
+        {% if username %}
+            <h1>Welcome, {{ username }}!</h1>
+            <a href="{{ url_for('logout') }}">Logout</a>
+        {% else %}
+            <a href="{{ url_for('register') }}">Register</a>
+            <a href="{{ url_for('login') }}">Register</a>
+        {% endif %}
+    </nav>
 </body>
 </html>
