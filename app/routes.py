@@ -6,7 +6,11 @@ from app.models import User
 
 @app.route('/')
 def home():
-    return render_template('home.jinja', username=current_user.username)
+    return render_template('home.jinja')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    return redirect(url_for('home'))
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
