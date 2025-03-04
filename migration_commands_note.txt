@@ -1,0 +1,8 @@
+# init db migration environment
+flask db init
+
+# run after making changes in db schema
+flask db migrate -m "init migration"
+
+# run after migrate
+flask db upgrade
