@@ -1,7 +1,5 @@
 {% extends "base.jinja" %}
-{% block title %}
-    Login Page
-{% endblock %}
+{% block title %}Login{% endblock %}
 {% block body %}
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
@@ -33,7 +31,7 @@
             {% endif %}
         </form>
         <p class="mt-4 text-center">
-            <a href="{{ url_for('register') }}" class="text-blue-500 hover:underline">Register page</a>
+            <a href="{{ url_for('register') }}" class="text-blue-500 hover:underline">Daftar</a>
         </p>
     </div>
 </body>

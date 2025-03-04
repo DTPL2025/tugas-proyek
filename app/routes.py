@@ -32,7 +32,7 @@ def login():
             login_user(user)
             return redirect(url_for('home'))
         else:
-            return render_template('login.jinja', form=form, error='Invalid username or password')
+            return render_template('login.jinja', form=form, error='Username atau password salah.')
     return render_template('login.jinja', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -54,11 +54,11 @@ def logout():
     logout_user()
     return redirect(url_for('home'))
 
-@app.route('/product/new', methods=['GET', 'POST'])
+@app.route('/produk/buat', methods=['GET', 'POST'])
 @login_required
 def create_product():
     if current_user.role != 'Penjual':
-        flash('You do not have permission to access this page.', 'danger')
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
         return redirect(url_for('home'))
     form = ProductForm()
     if form.validate_on_submit():
@@ -69,6 +69,6 @@ def create_product():
         product = Product(name=form.name.data, price=form.price.data, stock=form.stock.data, weight=form.weight.data, image_file=image_file, seller_id=current_user.id)
         db.session.add(product)
         db.session.commit()
-        flash('Your product has been created!', 'success')
+        flash('Produk Anda telah dibuat!', 'success')
         return redirect(url_for('create_product'))
-    return render_template('create_product.jinja', title='New Product', form=form)
+    return render_template('create_product.jinja', form=form)
