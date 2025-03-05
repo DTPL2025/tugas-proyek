@@ -2,13 +2,17 @@
 {% block title %}Buat Produk Baru{% endblock %}
 {% block body %}
 <body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
         <h1 class="text-2xl font-bold mb-6 text-center">Buat Produk Baru</h1>
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
             {{ form.hidden_tag() }}
             <div class="form-group">
             {{ form.name.label(class="block text-sm font-medium text-gray-700") }}
             {{ form.name(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            <div class="form-group">
+                {{ form.description.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.description(class="w-full p-2 border border-gray-300 rounded mt-1 h-52 resize-y align-top break-words whitespace-pre-wrap") }}
             </div>
             <div class="form-group">
             {{ form.price.label(class="block text-sm font-medium text-gray-700") }}

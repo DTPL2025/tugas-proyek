@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms_alchemy import ModelForm
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, FileField
+from wtforms import StringField, PasswordField, SubmitField, IntegerField, FileField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, AnyOf
 from app.models import User
 from flask_wtf.file import FileAllowed
@@ -33,8 +33,9 @@ class LoginForm(FlaskForm):
 
 class ProductForm(FlaskForm):
     name = StringField('Nama Produk', validators=[DataRequired()])
-    price = IntegerField('Harga (Rp)', validators=[DataRequired(), NumberRange(min=0)])
-    stock = IntegerField('Stok (Unit)', validators=[DataRequired(), NumberRange(min=0)])
+    description = TextAreaField('Deskripsi Produk', validators=[Length(max=750)])
+    price = IntegerField('Harga Produk (Rp)', validators=[DataRequired(), NumberRange(min=0)])
+    stock = IntegerField('Stok Produk (Unit)', validators=[DataRequired(), NumberRange(min=0)])
     image = FileField('Gambar Produk', validators=[FileAllowed(['jpg', 'png'])])
-    weight = IntegerField('Berat (gram)', validators=[DataRequired(), NumberRange(min=1)])
+    weight = IntegerField('Berat Produk (gram)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Tambah Produk')
