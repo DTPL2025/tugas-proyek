@@ -22,6 +22,14 @@
                 <label for="role" class="block text-gray-700">Daftar sebagai:</label>
                 {{ form.role(class="w-full p-2 border border-gray-300 rounded mt-1") }}
             </div>
+            <div id="name-field" style="display: none;">
+                {{ form.name.label(class="block text-gray-700") }}
+                {{ form.name(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            <div id="description-field" style="display: none;">
+                {{ form.description.label(class="block text-gray-700") }}
+                {{ form.description(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
             <div>
                 {{ form.submit(class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600") }}
             </div>
@@ -40,4 +48,28 @@
         </p>
     </div>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleField = document.querySelector('select[name="role"]');
+        const descriptionField = document.getElementById('description-field');
+        const nameField = document.getElementById('name-field');
+
+        function toggleFields() {
+            if (roleField.value === 'Penjual') {
+                descriptionField.style.display = 'block';
+                nameField.style.display = 'block';
+            } else {
+                descriptionField.style.display = 'none';
+                nameField.style.display = 'none';
+                descriptionField.querySelector('textarea').value = '';
+                nameField.querySelector('input').value = '';
+            }
+        }
+
+        roleField.addEventListener('change', toggleFields);
+
+        // Check the role field value on page load
+        toggleFields();
+    });
+</script>
 {% endblock %}

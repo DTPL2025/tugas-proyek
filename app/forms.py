@@ -13,6 +13,8 @@ class RegisterForm(ModelForm, FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])
     password = PasswordField('Password', validators=[DataRequired()])
     confirm_password = PasswordField('Konfirmasi Password', validators=[DataRequired()])
+    name = StringField('Nama Penjual')
+    description = TextAreaField('Deskripsi Penjual')
     submit = SubmitField('Daftar')
     
     def validate_username(self, username):
@@ -25,6 +27,13 @@ class RegisterForm(ModelForm, FlaskForm):
             return
         if self.password.data != confirm_password.data:
             raise ValidationError('Password dan konfirmasi password tidak sama.')
+        
+    def validate_role(self, role):
+        if role.data == 'Penjual':
+            if len(self.name.data) < 2 or len(self.name.data) > 50:
+                raise ValidationError('Nama Penjual harus antara 2 dan 50 karakter.')
+            if len(self.description.data) > 750:
+                raise ValidationError('Deskripsi Penjual tidak boleh lebih dari 750 karakter.')
 
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=20)])

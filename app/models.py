@@ -6,6 +6,8 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
     password = db.Column(db.String(50), nullable=False)
+    name = db.Column(db.String(50), nullable=True)
+    description = db.Column(db.Text, nullable=True)
     role = db.Column(Enum('Penjual', 'Pembeli', name='user_roles'), nullable=False, default='Pembeli')
     products = db.relationship('Product', backref='seller', lazy=True)
 
