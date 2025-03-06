@@ -17,7 +17,7 @@ def save_image(form_image):
 @app.route('/')
 def home():
     if current_user.is_authenticated:
-        return render_template('home.jinja', username=current_user.username)
+        return render_template('home.jinja', username=current_user.username, role=current_user.role)
     else:
         return render_template('home.jinja')
 
@@ -72,3 +72,50 @@ def create_product():
         flash('Produk Anda telah dibuat!', 'success')
         return redirect(url_for('create_product'))
     return render_template('create_product.jinja', form=form)
+
+@app.route('/produk/saya', methods=['GET', 'POST'])
+@login_required
+def view_product_seller():
+    if current_user.role != 'Penjual':
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+    products = Product.query.filter_by(seller_id=current_user.id).all()
+    return render_template('view_product_seller.jinja', products=products, username=current_user.username)
+
+@app.route('/produk/edit/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+def edit_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.seller_id != current_user.id:
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+    form = ProductForm()
+    if form.validate_on_submit():
+        if form.image.data and form.image.data.filename != '':
+            image_file = save_image(form.image.data)
+            product.image_file = image_file
+        product.name = form.name.data
+        product.price = form.price.data
+        product.stock = form.stock.data
+        product.weight = form.weight.data
+        db.session.commit()
+        flash('Produk Anda telah diperbarui!', 'success')
+        return redirect(url_for('view_product_seller'))
+    elif request.method == 'GET':
+        form.name.data = product.name
+        form.price.data = product.price
+        form.stock.data = product.stock
+        form.weight.data = product.weight
+    return render_template('edit_product.jinja', form=form, product=product)
+
+@app.route('/produk/hapus/<int:product_id>', methods=['GET', 'POST'])
+@login_required
+def delete_product(product_id):
+    product = Product.query.get_or_404(product_id)
+    if product.seller_id != current_user.id:
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+    db.session.delete(product)
+    db.session.commit()
+    flash('Produk Anda telah dihapus!', 'success')
+    return redirect(url_for('view_product_seller'))
