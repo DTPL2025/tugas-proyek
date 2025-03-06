@@ -66,7 +66,7 @@ def create_product():
             image_file = save_image(form.image.data)
         else:
             image_file = 'default.jpg'
-        product = Product(name=form.name.data, price=form.price.data, stock=form.stock.data, weight=form.weight.data, image_file=image_file, seller_id=current_user.id)
+        product = Product(name=form.name.data, description=form.description.data, price=form.price.data, stock=form.stock.data, weight=form.weight.data, image_file=image_file, seller_id=current_user.id)
         db.session.add(product)
         db.session.commit()
         flash('Produk Anda telah dibuat!', 'success')
