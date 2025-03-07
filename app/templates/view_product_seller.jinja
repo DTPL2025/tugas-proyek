@@ -1,7 +1,33 @@
 {% extends "base.jinja" %}
 {% block title %}Produk yang Dijual{% endblock %}
 {% block body %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="fixed top-5 right-5 z-50">
+      {% for category, message in messages %}
+        <div class="alert bg-green-500 text-white px-4 py-2 rounded shadow-lg mb-2 transition-opacity duration-500">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      let alerts = document.querySelectorAll(".alert");
+      alerts.forEach(function (alert) {
+        alert.classList.add("opacity-0"); // Tambahkan efek transparan
+        setTimeout(function () {
+          alert.remove();
+        }, 500); // Hapus elemen setelah efek
+      });
+    }, 3000); // Menghilang setelah 3 detik
+  });
+</script>
+
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 class="text-2xl font-bold mb-6 text-center">Produk yang Dijual oleh {{ username }}</h1>
         

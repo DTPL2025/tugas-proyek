@@ -110,6 +110,7 @@ def edit_product(product_id):
         
         db.session.commit()
         flash('Produk Anda telah diperbarui!', 'success')
+        
         return redirect(url_for('view_product_seller'))
     session.pop('_flashes', None)
     return render_template('edit_product.jinja', form=form, product=product)
@@ -126,3 +127,28 @@ def delete_product(product_id):
     db.session.commit()
     flash('Produk Anda telah dihapus!', 'success')
     return redirect(url_for('view_product_seller'))
+
+@app.route('/produk/list', methods=['GET'])
+def view_product_buyer():
+    products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
+    return render_template('view_product_buyer.jinja', products=products)
+
+
+# @app.route('/produk/<int:product_id>')
+# def detail_product(product_id):
+#     product = Product.query.get_or_404(product_id)  # Ambil produk dari database
+#     return render_template('detail_product.jinja', product=product)
+
+
+# @app.route('/cart/add/<int:product_id>', methods=['POST'])
+# @login_required
+# def add_to_cart(product_id):
+#     product = Product.query.get_or_404(product_id)
+    
+#     # Logika menambahkan produk ke keranjang
+#     cart_item = Cart(user_id=current_user.id, product_id=product.id, quantity=1)
+#     db.session.add(cart_item)
+#     db.session.commit()
+
+#     flash(f'Produk {product.name} telah ditambahkan ke keranjang!', 'success')
+#     return redirect(url_for('view_cart'))
