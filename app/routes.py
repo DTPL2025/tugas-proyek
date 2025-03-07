@@ -67,7 +67,15 @@ def create_product():
             image_file = save_image(form.image.data)
         else:
             image_file = 'default.jpg'
-        product = Product(name=form.name.data, description=form.description.data, price=form.price.data, stock=form.stock.data, weight=form.weight.data, image_file=image_file, seller_id=current_user.id)
+        product = Product(
+            name=form.name.data,
+            description=form.description.data,
+            price=form.price.data,
+            stock=form.stock.data,
+            weight=form.weight.data,
+            image_file=image_file,
+            seller_id=current_user.id
+        )
         db.session.add(product)
         db.session.commit()
         flash('Produk Anda telah dibuat!', 'success')
@@ -132,23 +140,3 @@ def delete_product(product_id):
 def view_product_buyer():
     products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
     return render_template('view_product_buyer.jinja', products=products)
-
-
-# @app.route('/produk/<int:product_id>')
-# def detail_product(product_id):
-#     product = Product.query.get_or_404(product_id)  # Ambil produk dari database
-#     return render_template('detail_product.jinja', product=product)
-
-
-# @app.route('/cart/add/<int:product_id>', methods=['POST'])
-# @login_required
-# def add_to_cart(product_id):
-#     product = Product.query.get_or_404(product_id)
-    
-#     # Logika menambahkan produk ke keranjang
-#     cart_item = Cart(user_id=current_user.id, product_id=product.id, quantity=1)
-#     db.session.add(cart_item)
-#     db.session.commit()
-
-#     flash(f'Produk {product.name} telah ditambahkan ke keranjang!', 'success')
-#     return redirect(url_for('view_cart'))
