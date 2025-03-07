@@ -5,6 +5,7 @@ from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
 from app.forms import LoginForm, RegisterForm, ProductForm
 from app.models import User, Product
+from flask import session
 
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
@@ -86,27 +87,33 @@ def view_product_seller():
 @login_required
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
+    
+    # Cek apakah pengguna memiliki izin untuk mengedit produk
     if product.seller_id != current_user.id:
         flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
         return redirect(url_for('home'))
-    form = ProductForm()
+    
+    form = ProductForm(obj=product)  # Mengisi form dengan data produk
+
     if form.validate_on_submit():
-        if form.image.data and form.image.data.filename != '':
+        # Cek apakah ada gambar baru yang diunggah
+        if form.image.data:
             image_file = save_image(form.image.data)
-            product.image_file = image_file
+            product.image_file = image_file  # Simpan gambar baru
+        
+        # Update informasi produk
         product.name = form.name.data
+        product.description = form.description.data  # Pastikan deskripsi juga diperbarui
         product.price = form.price.data
         product.stock = form.stock.data
         product.weight = form.weight.data
+        
         db.session.commit()
         flash('Produk Anda telah diperbarui!', 'success')
         return redirect(url_for('view_product_seller'))
-    elif request.method == 'GET':
-        form.name.data = product.name
-        form.price.data = product.price
-        form.stock.data = product.stock
-        form.weight.data = product.weight
+    session.pop('_flashes', None)
     return render_template('edit_product.jinja', form=form, product=product)
+
 
 @app.route('/produk/hapus/<int:product_id>', methods=['GET', 'POST'])
 @login_required

@@ -1,29 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seller Products</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
-</head>
-<body>
-    <h1>Products Sold by {{username}}</h1>
-    <div class="product-list">
-        {% for product in products %}
-            <div class="product-item">
-                <h2>{{ product.name }}</h2>
-                <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" alt="{{ product.name }}" style="width: 50px; height: 50px;">    
-                <p>{{ product.description }}</p>
-                <p>Price: ${{ product.price }}</p>
-                <p>Stock: {{ product.stock }}</p>
-                <a href="{{ url_for('edit_product', product_id=product.id) }}" class="btn btn-edit">Edit</a>
-                <a href="{{ url_for('delete_product', product_id=product.id) }}" class="btn btn-delete" 
-                onclick="return confirm('Are you sure you want to delete this product?');">Delete</a>
-            </div>
-        {% else %}
-            <p>No products found for this seller.</p>
-        {% endfor %}
+{% extends "base.jinja" %}
+{% block title %}Produk yang Dijual{% endblock %}
+{% block body %}
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
+        <h1 class="text-2xl font-bold mb-6 text-center">Produk yang Dijual oleh {{ username }}</h1>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {% for product in products %}
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">{{ product.name }}</h2>
+                    
+                    <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
+                         alt="{{ product.name }}" width="100" height="100" class="border rounded"
+                         class="w-32 h-32 object-cover rounded mt-2">
+                    
+                    <p class="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">{{ product.description }}</p>
+                    <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ product.price }}</p>
+                    <p class="text-gray-700">Stok: {{ product.stock }} Unit</p>
+                    
+                    <div class="mt-4 flex justify-between">
+                        <a href="{{ url_for('edit_product', product_id=product.id) }}" 
+                           class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm">Edit</a>
+                        <a href="{{ url_for('delete_product', product_id=product.id) }}" 
+                           class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm" 
+                           onclick="return confirm('Apakah Anda yakin ingin menghapus produk ini?');">Hapus</a>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-center text-gray-600">Tidak ada produk yang ditemukan untuk penjual ini.</p>
+            {% endfor %}
+        </div>
     </div>
 </body>
-</html>
-
+{% endblock %}
