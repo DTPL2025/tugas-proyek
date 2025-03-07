@@ -6,3 +6,5 @@ __pycache__
 *.pyc
 *.zip
 instance
+app/static/product_images/*
+!app/static/product_images/default.jpg

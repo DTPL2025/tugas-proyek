@@ -1,18 +1,13 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-</head>
+{% extends "base.jinja" %}
+{% block title %}Daftar Akun Baru{% endblock %}
+{% block body %}
 <body class="bg-gray-100 flex items-center justify-center h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h1 class="text-2xl font-bold mb-6 text-center">Register</h1>
+        <h1 class="text-2xl font-bold mb-6 text-center">Daftar Akun Baru</h1>
         <form action="" method="post" class="space-y-4">
             {{ form.hidden_tag() }}
             <div>
-                {{ form.username.label(class="block text-gray-700") }}
+                <label for="username" class="block text-gray-700">Username</label>
                 {{ form.username(class="w-full p-2 border border-gray-300 rounded mt-1") }}
             </div>
             <div>
@@ -24,8 +19,16 @@
                 {{ form.confirm_password(class="w-full p-2 border border-gray-300 rounded mt-1") }}
             </div>
             <div>
-                {{ form.role.label(class="block text-gray-700") }}
+                <label for="role" class="block text-gray-700">Daftar sebagai:</label>
                 {{ form.role(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            <div id="name-field" style="display: none;">
+                {{ form.name.label(class="block text-gray-700") }}
+                {{ form.name(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            <div id="description-field" style="display: none;">
+                {{ form.description.label(class="block text-gray-700") }}
+                {{ form.description(class="w-full p-2 border border-gray-300 rounded mt-1") }}
             </div>
             <div>
                 {{ form.submit(class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600") }}
@@ -34,15 +37,39 @@
                 <ul class="text-red-500">
                     {% for field, errors in form.errors.items() %}
                         {% for error in errors %}
-                            <li>{{ field }}: {{ error }}</li>
+                            <li>{{ error }}</li>
                         {% endfor %}
                     {% endfor %}
                 </ul>
             {% endif %}
         </form>
         <p class="mt-4 text-center">
-            <a href="{{ url_for('login') }}" class="text-blue-500 hover:underline">Login page</a>
+            <a href="{{ url_for('login') }}" class="text-blue-500 hover:underline">Login</a>
         </p>
     </div>
 </body>
-</html>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleField = document.querySelector('select[name="role"]');
+        const descriptionField = document.getElementById('description-field');
+        const nameField = document.getElementById('name-field');
+
+        function toggleFields() {
+            if (roleField.value === 'Penjual') {
+                descriptionField.style.display = 'block';
+                nameField.style.display = 'block';
+            } else {
+                descriptionField.style.display = 'none';
+                nameField.style.display = 'none';
+                descriptionField.querySelector('textarea').value = '';
+                nameField.querySelector('input').value = '';
+            }
+        }
+
+        roleField.addEventListener('change', toggleFields);
+
+        // Check the role field value on page load
+        toggleFields();
+    });
+</script>
+{% endblock %}
