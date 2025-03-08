@@ -1,0 +1,66 @@
+{% extends "base.jinja" %}
+{% block title %}Produk yang Dijual{% endblock %}
+{% block body %}
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="fixed top-5 right-5 z-50">
+      {% for category, message in messages %}
+        <div class="alert bg-green-500 text-white px-4 py-2 rounded shadow-lg mb-2 transition-opacity duration-500">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      let alerts = document.querySelectorAll(".alert");
+      alerts.forEach(function (alert) {
+        alert.classList.add("opacity-0"); // Tambahkan efek transparan
+        setTimeout(function () {
+          alert.remove();
+        }, 500); // Hapus elemen setelah efek
+      });
+    }, 3000); // Menghilang setelah 3 detik
+  });
+</script>
+
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
+        <h1 class="text-2xl font-bold mb-6 text-center">Produk yang Dijual oleh {{ username }}</h1>
+        
+        <!-- Tombol Tambah Produk -->
+        <div class="mb-4 text-center">
+            <a href="{{ url_for('create_product') }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Tambah Produk</a>
+        </div>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            {% for product in products %}
+                <div class="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200">
+                    <h2 class="text-lg font-semibold text-gray-900">{{ product.name }}</h2>
+                    
+                    <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
+                         alt="{{ product.name }}" width="100" height="100" class="border rounded"
+                         class="w-32 h-32 object-cover rounded mt-2">
+                    
+                    <p class="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">{{ product.description }}</p>
+                    <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ product.price }}</p>
+                    <p class="text-gray-700">Stok: {{ product.stock }} Unit</p>
+                    
+                    <div class="mt-4 flex justify-between">
+                        <a href="{{ url_for('edit_product', product_id=product.id) }}" 
+                           class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm">Ubah</a>
+                        <a href="{{ url_for('delete_product', product_id=product.id) }}" 
+                           class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm" 
+                           onclick="return confirm('Apakah Anda yakin ingin menghapus produk ini?');">Hapus</a>
+                    </div>
+                </div>
+            {% else %}
+                <p class="text-center text-gray-600">Tidak ada produk yang ditemukan untuk penjual ini.</p>
+            {% endfor %}
+        </div>
+    </div>
+</body>
+{% endblock %}
