@@ -1,15 +1,33 @@
-{% extends "base.jinja" %} 
+{% extends "base.jinja" %}
 {% block title %}Edit Produk{% endblock %}
 {% block body %}
-<body class="bg-gray-100 flex items-center justify-center h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl relative">
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl relative overflow-auto">
         
         <!-- Tombol Batal Ubah di kanan atas -->
         <a href="{{ url_for('view_product_seller') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Batal Ubah</a>
         
         <h1 class="text-2xl font-bold mb-6 text-center">Edit Produk</h1>
+
+        <!-- Form Hapus Gambar -->
+        {% if product.image_file %}
+            <div class="mb-4 flex flex-col items-center">
+                <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
+                    alt="Gambar Produk" class="border rounded w-48 h-48 object-cover shadow-md">
         
-        <!-- Formulir untuk mengedit produk -->
+                <!-- Form Hapus Gambar -->
+            {% if product.image_file != "default.jpg" %}
+                <form method="POST" action="{{ url_for('delete_product_image', product_id=product.id) }}" class="mt-4">
+                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus gambar ini?')">
+                        Hapus Gambar
+                    </button>
+                </form>
+            {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Form Ubah Produk -->
         <form method="POST" enctype="multipart/form-data" class="space-y-6">
             {{ form.hidden_tag() }} <!-- Token CSRF untuk keamanan -->
             
@@ -47,27 +65,8 @@
             <div class="form-group">
                 {{ form.image.label(class="block text-sm font-medium text-gray-700") }}
                 {{ form.image(class="w-full p-2 border border-gray-300 rounded mt-1") }}
-
-                <!-- Preview Gambar Produk yang Ada Sekarang -->
-                {% if product.image_file %}
-                    <div class="mt-2 flex items-center gap-4">
-                        <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
-                             alt="Gambar Produk" class="border rounded w-32 h-32 object-cover">
-                        
-                        <!-- Tombol Hapus Gambar -->
-                        {% if product.image_file != 'default.jpg' %}
-                            <form method="POST" class="inline">
-                                <input type="hidden" name="delete_image" value="true">
-                                <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-                                        onclick="return confirm('Apakah Anda yakin ingin menghapus gambar ini?')">
-                                    Hapus Gambar
-                                </button>
-                            </form>
-                        {% endif %}
-                    </div>
-                {% endif %}
             </div>
-            
+
             <!-- Tombol Submit untuk memperbarui produk -->
             <div class="form-group">
                 <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Perbarui Produk</button>

@@ -105,26 +105,18 @@ def edit_product(product_id):
     old_image = product.image_file  # Simpan nama gambar lama untuk perbandingan nanti
 
     if form.validate_on_submit():
-        # Jika pengguna menghapus gambar (menekan tombol Hapus Gambar)
-        if 'delete_image' in request.form:
-            if product.image_file != 'default.jpg':  # Hindari menghapus default.jpg
-                image_path = os.path.join(app.root_path, 'static/product_images', product.image_file)
-                if os.path.exists(image_path):
-                    os.remove(image_path)  # Hapus gambar lama
-            product.image_file = 'default.jpg'  # Set gambar ke default
-        
         # Jika pengguna mengunggah gambar baru
-        elif form.image.data:
+        if form.image.data:
             new_image = save_image(form.image.data)  # Simpan gambar baru
             product.image_file = new_image  # Ganti dengan gambar baru
-            
+
             # Hapus gambar lama jika bukan default.jpg
-            if old_image != 'default.jpg':
+            if old_image and old_image != 'default.jpg':
                 old_image_path = os.path.join(app.root_path, 'static/product_images', old_image)
                 if os.path.exists(old_image_path):
                     os.remove(old_image_path)  # Hapus gambar lama
         
-        # Update informasi produk
+        # Update informasi produk tanpa menghapus gambar
         product.name = form.name.data
         product.description = form.description.data
         product.price = form.price.data
@@ -135,10 +127,32 @@ def edit_product(product_id):
         flash('Produk Anda telah diperbarui!', 'success')
 
         return redirect(url_for('view_product_seller'))
-    
-    session.pop('_flashes', None)  # Menghapus pesan flash agar tidak muncul dua kali
+
     return render_template('edit_product.jinja', form=form, product=product)
 
+
+# Route untuk menghapus gambar produk (Form Terpisah)
+@app.route('/produk/hapus_gambar/<int:product_id>', methods=['POST'])
+@login_required
+def delete_product_image(product_id):
+    product = Product.query.get_or_404(product_id)
+
+    # Pastikan hanya pemilik produk yang bisa menghapus gambar
+    if product.seller_id != current_user.id:
+        flash('Anda tidak memiliki izin untuk menghapus gambar ini.', 'danger')
+        return redirect(url_for('home'))
+
+    # Hapus gambar jika bukan default.jpg
+    if product.image_file and product.image_file != 'default.jpg':
+        image_path = os.path.join(app.root_path, 'static/product_images', product.image_file)
+        if os.path.exists(image_path):
+            os.remove(image_path)  # Hapus file gambar dari storage
+
+        product.image_file = 'default.jpg'  # Reset ke gambar default
+        db.session.commit()
+        flash('Gambar berhasil dihapus.', 'success')
+
+    return redirect(url_for('edit_product', product_id=product.id))
 
 @app.route('/produk/hapus/<int:product_id>', methods=['GET', 'POST'])
 @login_required
