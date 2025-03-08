@@ -95,32 +95,48 @@ def view_product_seller():
 @login_required
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
-    
+
     # Cek apakah pengguna memiliki izin untuk mengedit produk
     if product.seller_id != current_user.id:
         flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
         return redirect(url_for('home'))
-    
+
     form = ProductForm(obj=product)  # Mengisi form dengan data produk
+    old_image = product.image_file  # Simpan nama gambar lama untuk perbandingan nanti
 
     if form.validate_on_submit():
-        # Cek apakah ada gambar baru yang diunggah
-        if form.image.data:
-            image_file = save_image(form.image.data)
-            product.image_file = image_file  # Simpan gambar baru
+        # Jika pengguna menghapus gambar (menekan tombol Hapus Gambar)
+        if 'delete_image' in request.form:
+            if product.image_file != 'default.jpg':  # Hindari menghapus default.jpg
+                image_path = os.path.join(app.root_path, 'static/product_images', product.image_file)
+                if os.path.exists(image_path):
+                    os.remove(image_path)  # Hapus gambar lama
+            product.image_file = 'default.jpg'  # Set gambar ke default
+        
+        # Jika pengguna mengunggah gambar baru
+        elif form.image.data:
+            new_image = save_image(form.image.data)  # Simpan gambar baru
+            product.image_file = new_image  # Ganti dengan gambar baru
+            
+            # Hapus gambar lama jika bukan default.jpg
+            if old_image != 'default.jpg':
+                old_image_path = os.path.join(app.root_path, 'static/product_images', old_image)
+                if os.path.exists(old_image_path):
+                    os.remove(old_image_path)  # Hapus gambar lama
         
         # Update informasi produk
         product.name = form.name.data
-        product.description = form.description.data  # Pastikan deskripsi juga diperbarui
+        product.description = form.description.data
         product.price = form.price.data
         product.stock = form.stock.data
         product.weight = form.weight.data
-        
+
         db.session.commit()
         flash('Produk Anda telah diperbarui!', 'success')
-        
+
         return redirect(url_for('view_product_seller'))
-    session.pop('_flashes', None)
+    
+    session.pop('_flashes', None)  # Menghapus pesan flash agar tidak muncul dua kali
     return render_template('edit_product.jinja', form=form, product=product)
 
 
@@ -128,15 +144,31 @@ def edit_product(product_id):
 @login_required
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
+
+    # Pastikan hanya pemilik produk yang bisa menghapus
     if product.seller_id != current_user.id:
-        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        flash('Anda tidak memiliki izin untuk menghapus produk ini.', 'danger')
         return redirect(url_for('home'))
+
+    # Path lengkap gambar yang akan dihapus
+    if product.image_file:  # Pastikan gambar ada
+        image_path = os.path.join(app.root_path, 'static/product_images', product.image_file)
+
+        # Cek apakah file gambar ada sebelum menghapus
+        if os.path.exists(image_path):
+            os.remove(image_path)  # Hapus file gambar
+
+    # Hapus produk dari database
     db.session.delete(product)
     db.session.commit()
-    flash('Produk Anda telah dihapus!', 'success')
+
+    flash('Produk telah dihapus!', 'success')
     return redirect(url_for('view_product_seller'))
+
 
 @app.route('/produk/list', methods=['GET'])
 def view_product_buyer():
     products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
+
     return render_template('view_product_buyer.jinja', products=products)
+
