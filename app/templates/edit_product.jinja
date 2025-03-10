@@ -1,0 +1,97 @@
+{% extends "base.jinja" %}
+{% block title %}Edit Produk{% endblock %}
+{% block body %}
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl relative overflow-auto">
+        
+        <!-- Tombol Batal Ubah di kanan atas -->
+        <a href="{{ url_for('view_product_seller') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Batal Ubah</a>
+        
+        <h1 class="text-2xl font-bold mb-6 text-center">Edit Produk</h1>
+
+        <!-- Form Hapus Gambar -->
+        {% if product.image_file %}
+            <div class="mb-4 flex flex-col items-center">
+                <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
+                    alt="Gambar Produk" class="border rounded w-48 h-48 object-cover shadow-md">
+        
+                <!-- Form Hapus Gambar -->
+            {% if product.image_file != "default.jpg" %}
+                <form method="POST" action="{{ url_for('delete_product_image', product_id=product.id) }}" class="mt-4">
+                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                        onclick="return confirm('Apakah Anda yakin ingin menghapus gambar ini?')">
+                        Hapus Gambar
+                    </button>
+                </form>
+            {% endif %}
+            </div>
+        {% endif %}
+
+        <!-- Form Ubah Produk -->
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {{ form.hidden_tag() }} <!-- Token CSRF untuk keamanan -->
+            
+            <!-- Input Nama Produk -->
+            <div class="form-group">
+                {{ form.name.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.name(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            
+            <!-- Input Deskripsi Produk -->
+            <div class="form-group">
+                {{ form.description.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.description(class="w-full p-2 border border-gray-300 rounded mt-1 h-52 resize-y align-top break-words whitespace-pre-wrap") }}
+            </div>
+            
+            <!-- Input Harga Produk -->
+            <div class="form-group">
+                {{ form.price.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.price(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            
+            <!-- Input Stok Produk -->
+            <div class="form-group">
+                {{ form.stock.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.stock(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            
+            <!-- Input Berat Produk -->
+            <div class="form-group">
+                {{ form.weight.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.weight(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+            
+            <!-- Input Gambar Produk -->
+            <div class="form-group">
+                {{ form.image.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.image(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+            </div>
+
+            <!-- Tombol Submit untuk memperbarui produk -->
+            <div class="form-group">
+                <button type="submit" class="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Perbarui Produk</button>
+            </div>
+            
+            <!-- Menampilkan pesan kesalahan jika ada -->
+            {% if form.errors %}
+                <ul class="text-red-500">
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            
+            <!-- Menampilkan pesan flash jika ada -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </form>
+    </div>
+</body>
+{% endblock %}

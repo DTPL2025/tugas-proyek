@@ -9,5 +9,8 @@
         <a href="{{ url_for('register') }}">Daftar</a>
         <a href="{{ url_for('login') }}">Login</a>
     {% endif %}
+    {% if role=="Penjual"%}
+        <a href="{{ url_for('create_product') }}">Tambah Produk</a>
+    {% endif %}
 </nav>
 {% endblock %}

@@ -45,6 +45,6 @@ class ProductForm(FlaskForm):
     description = TextAreaField('Deskripsi Produk', validators=[Length(max=750)])
     price = IntegerField('Harga Produk (Rp)', validators=[DataRequired(), NumberRange(min=0)])
     stock = IntegerField('Stok Produk (Unit)', validators=[DataRequired(), NumberRange(min=0)])
-    image = FileField('Gambar Produk', validators=[FileAllowed(['jpg', 'png'])])
+    image = FileField('Gambar Produk', validators=[FileAllowed(['jpg', 'png'], 'Format file tidak didukung! Harap unggah gambar dengan format JPG atau PNG.')])
     weight = IntegerField('Berat Produk (gram)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Tambah Produk')
