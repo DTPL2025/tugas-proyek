@@ -186,3 +186,12 @@ def view_product_buyer(): #Nama Function nya (Bebas)
 
     return render_template('view_product_buyer.jinja', products=products)
 
+@app.route('/produk/list/<int:product_id>/details')
+def view_product_details(product_id):
+    # Query produk berdasarkan ID
+    product = Product.query.get_or_404(product_id)
+    return render_template('view_product_details.jinja', product=product)
+
+
+
+
