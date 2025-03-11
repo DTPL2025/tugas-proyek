@@ -1,6 +1,32 @@
 {% extends "base.jinja" %}
 {% block title %}Daftar Produk{% endblock %}
 {% block body %}
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }} fixed top-5 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-md transition-opacity duration-500 opacity-100">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+{% endwith %}
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      let alerts = document.querySelectorAll(".alert");
+      alerts.forEach(function (alert) {
+        alert.classList.add("opacity-0"); // Efek transparan
+        setTimeout(function () {
+          alert.remove();
+        }, 500); // Hapus elemen setelah efek
+      });
+    }, 3000); // Menghilang setelah 3 detik
+  });
+</script>
+
+
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 class="text-2xl font-bold mb-6 text-center">Daftar Produk</h1>
