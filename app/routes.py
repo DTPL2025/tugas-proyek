@@ -186,3 +186,8 @@ def view_product_buyer():
 
     return render_template('view_product_buyer.jinja', products=products)
 
+@app.route('/produk/list', methods=['GET'])
+def view_product_buyer():
+    products = Product.query.order_by(Product.name.asc()).all() 
+
+    return render_template('katalog_umkm.jinja', products=products)
