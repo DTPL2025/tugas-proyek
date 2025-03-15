@@ -179,7 +179,6 @@ def delete_product(product_id):
     flash('Produk telah dihapus!', 'success')
     return redirect(url_for('view_product_seller'))
 
-
 @app.route('/produk/list', methods=['GET'])
 def view_product_buyer():
     products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
@@ -189,9 +188,13 @@ def view_product_buyer():
 @app.route('/produk/list/<int:product_id>/details')
 def view_product_details(product_id):
     # Query produk berdasarkan ID
-    product = Product.query.get_or_404(product_id)
+    product = Product.query.get(product_id)
+
+    # Jika produk tidak ditemukan, tampilkan pesan dan redirect
+    if product is None:
+        flash("Produk Tidak Ditemukan, kembali ke halaman produk.", "danger")
+        return redirect(url_for('view_product_buyer'))
+
     return render_template('view_product_details.jinja', product=product)
-
-
 
 
