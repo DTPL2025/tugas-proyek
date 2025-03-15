@@ -1,0 +1,7 @@
+---
+tags:
+  - General
+summary: Home page
+responses:
+  200:
+    description: Home page loaded successfully

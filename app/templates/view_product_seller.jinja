@@ -43,7 +43,7 @@
                     
                     <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
                          alt="{{ product.name }}" width="100" height="100" class="border rounded"
-                         class="w-32 h-32 object-cover rounded mt-2">
+                         class="w-32 h-32 object-cover rounded mt-2" style="width: 100px; height: 100px;">
                     
                     <p class="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">{{ product.description }}</p>
                     <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ product.price }}</p>

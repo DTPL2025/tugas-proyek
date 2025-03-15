@@ -1,0 +1,42 @@
+---
+tags:
+  - Product
+summary: Edit a product
+parameters:
+  - name: name
+    in: formData
+    type: string
+    required: true
+    description: The name of the product
+  - name: description
+    in: formData
+    type: string
+    required: false
+    description: The description of the product
+  - name: price
+    in: formData
+    type: integer
+    required: true
+    description: The price of the product
+  - name: stock
+    in: formData
+    type: integer
+    required: true
+    description: The stock of the product
+  - name: weight
+    in: formData
+    type: integer
+    required: true
+    description: The weight of the product
+  - name: image
+    in: formData
+    type: file
+    required: false
+    description: The image of the product
+responses:
+  200:
+    description: Product updated successfully
+  400:
+    description: Invalid input
+  403:
+    description: Forbidden

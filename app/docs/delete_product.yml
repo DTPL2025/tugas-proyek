@@ -1,0 +1,9 @@
+---
+tags:
+  - Product
+summary: Delete a product
+responses:
+  200:
+    description: Product deleted successfully
+  403:
+    description: Forbidden

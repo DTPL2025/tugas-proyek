@@ -1,0 +1,9 @@
+---
+tags:
+  - Product
+summary: View products for seller
+responses:
+  200:
+    description: Products loaded successfully
+  403:
+    description: Forbidden
