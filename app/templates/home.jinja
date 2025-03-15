@@ -1,16 +1,21 @@
 {% extends "base.jinja" %}
 {% block title %}Beranda{% endblock %}
 {% block body %}
-<nav>
-    {% if username %}
-        <h1>Selamat datang, {{ username }}!</h1>
-        <a href="{{ url_for('logout') }}">Logout</a>
-    {% else %}
-        <a href="{{ url_for('register') }}">Daftar</a>
-        <a href="{{ url_for('login') }}">Login</a>
-    {% endif %}
-    {% if role=="Penjual"%}
-        <a href="{{ url_for('create_product') }}">Tambah Produk</a>
-    {% endif %}
-</nav>
+<style>
+    body {
+        background-image: url('/static/images/bg_beranda.jpg');
+        background-size: cover;
+        background-repeat: no-repeat;
+        background-attachment: fixed;
+        background-position: center; /* Atur posisi background agar tengah secara vertikal */
+    }
+    section {
+        width: 600px; /* Atur lebar spesifik sesuai kebutuhan Anda */
+        margin: 0 auto; /* Menengahkan elemen secara horizontal */
+    }
+</style>
+<section class="bg-gray-100 p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-bold mb-4">Tentang Kami</h2>
+    <p class="text-gray-700">Selamat datang di situs web kami. Di sini Anda dapat menemukan berbagai informasi dan layanan yang kami tawarkan. Kami berkomitmen untuk memberikan yang terbaik bagi Anda.</p>
+</section>
 {% endblock %}
