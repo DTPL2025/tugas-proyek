@@ -5,7 +5,7 @@
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl relative overflow-auto">
         
         <!-- Tombol Batal Ubah di kanan atas -->
-        <a href="{{ url_for('view_product_seller') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Batal Ubah</a>
+        <a href="{{ url_for('etalase_product') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Batal Ubah</a>
         
         <h1 class="text-2xl font-bold mb-6 text-center">Edit Produk</h1>
 
@@ -17,7 +17,7 @@
         
                 <!-- Form Hapus Gambar -->
             {% if product.image_file != "default.jpg" %}
-                <form method="POST" action="{{ url_for('delete_product_image', product_id=product.id) }}" class="mt-4">
+                <form method="DELETE" action="{{ url_for('delete_product_image', product_id=product.id) }}" class="mt-4">
                     <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
                         onclick="return confirm('Apakah Anda yakin ingin menghapus gambar ini?')">
                         Hapus Gambar
@@ -28,7 +28,7 @@
         {% endif %}
 
         <!-- Form Ubah Produk -->
-        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+        <form method="PUT" enctype="multipart/form-data" class="space-y-6">
             {{ form.hidden_tag() }} <!-- Token CSRF untuk keamanan -->
             
             <!-- Input Nama Produk -->

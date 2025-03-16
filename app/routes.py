@@ -16,13 +16,14 @@ def save_image(form_image):
     form_image.save(image_path)
     return image_fn
 
+@app.context_processor
+def inject_user():
+    return dict(current_user=current_user)
+
 @app.route('/')
 @swag_from('docs/home.yml')
 def home():
-    if current_user.is_authenticated:
-        return render_template('home.jinja', username=current_user.username, role=current_user.role)
-    else:
-        return render_template('home.jinja')
+    return render_template('home.jinja')
 
 @app.route('/login', methods=['GET', 'POST'])
 @swag_from('docs/login.yml')
@@ -30,11 +31,12 @@ def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
     form = LoginForm()
+    next_page = request.args.get('next')
     if form.validate_on_submit():
         user = User.query.filter_by(username=form.username.data).first()
         if user and bcrypt.check_password_hash(user.password, form.password.data):
             login_user(user)
-            return redirect(url_for('home'))
+            return redirect(next_page or url_for('home'))
         else:
             return render_template('login.jinja', form=form, error='Username atau password salah.')
     return render_template('login.jinja', form=form)
@@ -88,15 +90,21 @@ def create_product():
         return redirect(url_for('create_product'))
     return render_template('create_product.jinja', form=form)
 
-@app.route('/produk/saya', methods=['GET', 'POST'])
+@app.route('/produk/list')
+@swag_from('docs/katalog_product.yml')
+def katalog_product():
+    products = Product.query.order_by(Product.name.asc()).all() 
+    return render_template('katalog_product.jinja', products=products)
+
+@app.route('/produk/saya')
 @login_required
-@swag_from('docs/view_product_seller.yml')
-def view_product_seller():
+@swag_from('docs/etalase_product.yml')
+def etalase_product():
     if current_user.role != 'Penjual':
         flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
         return redirect(url_for('home'))
     products = Product.query.filter_by(seller_id=current_user.id).all()
-    return render_template('view_product_seller.jinja', products=products, username=current_user.username)
+    return render_template('etalase_product.jinja', products=products)
 
 @app.route('/produk/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
@@ -134,12 +142,10 @@ def edit_product(product_id):
         db.session.commit()
         flash('Produk Anda telah diperbarui!', 'success')
 
-        return redirect(url_for('view_product_seller'))
+        return redirect(url_for('etalase_product'))
 
     return render_template('edit_product.jinja', form=form, product=product)
 
-
-# Route untuk menghapus gambar produk (Form Terpisah)
 @app.route('/produk/hapus_gambar/<int:product_id>', methods=['POST'])
 @login_required
 @swag_from('docs/delete_product_image.yml')
@@ -163,7 +169,7 @@ def delete_product_image(product_id):
 
     return redirect(url_for('edit_product', product_id=product.id))
 
-@app.route('/produk/hapus/<int:product_id>', methods=['GET', 'POST'])
+@app.route('/produk/hapus/<int:product_id>', methods=['POST'])
 @login_required
 @swag_from('docs/delete_product.yml')
 def delete_product(product_id):
@@ -187,23 +193,17 @@ def delete_product(product_id):
     db.session.commit()
 
     flash('Produk telah dihapus!', 'success')
-    return redirect(url_for('view_product_seller'))
+    return redirect(url_for('etalase_product'))
 
-@app.route('/produk/list', methods=['GET'])
-@swag_from('docs/katalog_buyer.yml')
-def katalog_buyer():
-    products = Product.query.order_by(Product.name.asc()).all() 
-    return render_template('katalog_buyer.jinja', products=products)
-
-@app.route('/produk/list/<int:product_id>/details')
-@swag_from('docs/view_product_details.yml')
-def view_product_details(product_id):
+@app.route('/produk/<int:product_id>')
+@swag_from('docs/detail_product.yml')
+def detail_product(product_id):
     # Query produk berdasarkan ID
     product = Product.query.get(product_id)
 
     # Jika produk tidak ditemukan, tampilkan pesan dan redirect
     if product is None:
         flash("Produk Tidak Ditemukan, kembali ke halaman produk.", "danger")
-        return redirect(url_for('view_product_buyer'))
+        return redirect(request.referrer or url_for('katalog_product'))
 
-    return render_template('view_product_details.jinja', product=product)
+    return render_template('detail_product.jinja', product=product)
