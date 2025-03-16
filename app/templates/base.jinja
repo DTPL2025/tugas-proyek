@@ -16,7 +16,7 @@
                 {% if role == 'Penjual' %}
                     <a href="{{ url_for('view_product_seller') }}" class="text-gray-700 hover:text-gray-900">Etalase</a>
                 {% endif %}
-                <a href="{{ url_for('view_product_buyer') }}" class="text-gray-700 hover:text-gray-900">Product</a>
+                <a href="{{ url_for('katalog_buyer') }}" class="text-gray-700 hover:text-gray-900">Product</a>
                 <a href="/" class="text-gray-700 hover:text-gray-900">Event</a>
                 {% if username %}
                     <span class="text-gray-700">Selamat datang, {{ username }}!</span>

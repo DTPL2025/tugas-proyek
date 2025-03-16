@@ -189,14 +189,14 @@ def delete_product(product_id):
     flash('Produk telah dihapus!', 'success')
     return redirect(url_for('view_product_seller'))
 
-
 @app.route('/produk/list', methods=['GET'])
-@swag_from('docs/view_product_buyer.yml')
-def view_product_buyer():
-    products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
-    return render_template('view_product_buyer.jinja', products=products)
+@swag_from('docs/katalog_buyer.yml')
+def katalog_buyer():
+    products = Product.query.order_by(Product.name.asc()).all() 
+    return render_template('katalog_buyer.jinja', products=products)
 
 @app.route('/produk/list/<int:product_id>/details')
+@swag_from('docs/view_product_details.yml')
 def view_product_details(product_id):
     # Query produk berdasarkan ID
     product = Product.query.get(product_id)
@@ -207,5 +207,3 @@ def view_product_details(product_id):
         return redirect(url_for('view_product_buyer'))
 
     return render_template('view_product_details.jinja', product=product)
-
-
