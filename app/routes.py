@@ -180,11 +180,11 @@ def delete_product(product_id):
     return redirect(url_for('view_product_seller'))
 
 
-@app.route('/produk/list', methods=['GET'])
-def view_product_buyer():
-    products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
+# @app.route('/produk/list', methods=['GET'])
+# def view_product_buyer():
+#     products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
 
-    return render_template('view_product_buyer.jinja', products=products)
+#     return render_template('view_product_buyer.jinja', products=products)
 
 @app.route('/produk/list', methods=['GET'])
 def katalog_buyer():
