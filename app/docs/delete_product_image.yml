@@ -1,7 +1,7 @@
+Delete product image
 ---
 tags:
   - Product
-summary: Delete product image
 responses:
   200:
     description: Image deleted successfully

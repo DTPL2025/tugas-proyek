@@ -1,7 +1,7 @@
+User login
 ---
 tags:
   - User
-summary: User login
 parameters:
   - name: username
     in: formData

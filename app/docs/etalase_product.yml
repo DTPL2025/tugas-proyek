@@ -1,7 +1,9 @@
+View products seller is selling
 ---
 tags:
   - Product
-summary: View products for buyer
 responses:
   200:
     description: Products loaded successfully
+  403:
+    description: Forbidden
