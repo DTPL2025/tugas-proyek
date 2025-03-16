@@ -1,7 +1,7 @@
+Edit a product
 ---
 tags:
   - Product
-summary: Edit a product
 parameters:
   - name: name
     in: formData

@@ -1,7 +1,7 @@
+User logout
 ---
 tags:
   - User
-summary: User logout
 responses:
   200:
     description: Successful logout

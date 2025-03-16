@@ -1,0 +1,7 @@
+View products for buyer to be bought
+---
+tags:
+  - Product
+responses:
+  200:
+    description: Products loaded successfully

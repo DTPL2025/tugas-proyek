@@ -1,7 +1,7 @@
+Delete a product
 ---
 tags:
   - Product
-summary: Delete a product
 responses:
   200:
     description: Product deleted successfully
