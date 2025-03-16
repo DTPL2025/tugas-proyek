@@ -2,7 +2,6 @@ Home page
 ---
 tags:
   - General
-description: Renders the home page.
 responses:
   200:
     description: Home page loaded successfully
