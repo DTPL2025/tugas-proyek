@@ -6,6 +6,7 @@ from app import app, db, bcrypt
 from app.forms import LoginForm, RegisterForm, ProductForm
 from app.models import User, Product
 from flask import session
+from flasgger import swag_from
 
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
@@ -16,6 +17,7 @@ def save_image(form_image):
     return image_fn
 
 @app.route('/')
+@swag_from('docs/home.yml')
 def home():
     if current_user.is_authenticated:
         return render_template('home.jinja', username=current_user.username, role=current_user.role)
@@ -23,6 +25,7 @@ def home():
         return render_template('home.jinja')
 
 @app.route('/login', methods=['GET', 'POST'])
+@swag_from('docs/login.yml')
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -37,6 +40,7 @@ def login():
     return render_template('login.jinja', form=form)
 
 @app.route('/register', methods=['GET', 'POST'])
+@swag_from('docs/register.yml')
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -51,12 +55,14 @@ def register():
 
 @app.route('/logout')
 @login_required
+@swag_from('docs/logout.yml')
 def logout():
     logout_user()
     return redirect(url_for('home'))
 
 @app.route('/produk/buat', methods=['GET', 'POST'])
 @login_required
+@swag_from('docs/create_product.yml')
 def create_product():
     if current_user.role != 'Penjual':
         flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
@@ -84,6 +90,7 @@ def create_product():
 
 @app.route('/produk/saya', methods=['GET', 'POST'])
 @login_required
+@swag_from('docs/view_product_seller.yml')
 def view_product_seller():
     if current_user.role != 'Penjual':
         flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
@@ -93,6 +100,7 @@ def view_product_seller():
 
 @app.route('/produk/edit/<int:product_id>', methods=['GET', 'POST'])
 @login_required
+@swag_from('docs/edit_product.yml')
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
 
@@ -134,6 +142,7 @@ def edit_product(product_id):
 # Route untuk menghapus gambar produk (Form Terpisah)
 @app.route('/produk/hapus_gambar/<int:product_id>', methods=['POST'])
 @login_required
+@swag_from('docs/delete_product_image.yml')
 def delete_product_image(product_id):
     product = Product.query.get_or_404(product_id)
 
@@ -156,6 +165,7 @@ def delete_product_image(product_id):
 
 @app.route('/produk/hapus/<int:product_id>', methods=['GET', 'POST'])
 @login_required
+@swag_from('docs/delete_product.yml')
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
 
@@ -180,14 +190,34 @@ def delete_product(product_id):
     return redirect(url_for('view_product_seller'))
 
 
-# @app.route('/produk/list', methods=['GET'])
-# def view_product_buyer():
-#     products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
 
-#     return render_template('view_product_buyer.jinja', products=products)
+@app.route('/produk/list', methods=['GET'])
+@swag_from('docs/view_product_buyer.yml')
+def view_product_buyer():
+    products = Product.query.order_by(Product.name.asc()).all()  # Urut berdasarkan nama toko
+    return render_template('view_product_buyer.jinja', products=products)
+
+@app.route('/produk/list', methods=['GET'])
+def katalog_umkm():
+    products = Product.query.order_by(Product.name.asc()).all() 
+
+    return render_template('katalog_umkm.jinja', products=products)
+
 
 @app.route('/produk/list', methods=['GET'])
 def katalog_buyer():
     products = Product.query.order_by(Product.name.asc()).all() 
 
     return render_template('katalog_buyer.jinja', products=products)
+
+@app.route('/produk/list/<int:product_id>/details')
+def view_product_details(product_id):
+    # Query produk berdasarkan ID
+    product = Product.query.get(product_id)
+
+    # Jika produk tidak ditemukan, tampilkan pesan dan redirect
+    if product is None:
+        flash("Produk Tidak Ditemukan, kembali ke halaman produk.", "danger")
+        return redirect(url_for('view_product_buyer'))
+
+    return render_template('view_product_details.jinja', product=product)
