@@ -10,14 +10,14 @@
     {% block navbar %}
     <nav class="bg-white shadow-md w-full fixed top-0">
         <div class="container mx-auto px-4 py-2 flex justify-between items-center">
-            <a href="{{ url_for('home') }}" class="text-xl font-bold">Ecommerce Manud Jaya</a>
+            <a href="{{ url_for('home') }}" class="text-xl font-bold">E-Manja</a>
             <div class="space-x-4">
-                <a href="{{ url_for('home') }}" class="text-gray-700 hover:text-gray-900">Home</a>
+                <a href="{{ url_for('home') }}" class="text-gray-700 hover:text-gray-900">Beranda</a>
                 {% if current_user.role == 'Penjual' %}
                     <a href="{{ url_for('etalase_product') }}" class="text-gray-700 hover:text-gray-900">Etalase</a>
                 {% endif %}
-                <a href="{{ url_for('katalog_product') }}" class="text-gray-700 hover:text-gray-900">Product</a>
-                <a href="/" class="text-gray-700 hover:text-gray-900">Event</a>
+                <a href="{{ url_for('katalog_product') }}" class="text-gray-700 hover:text-gray-900">Katalog</a>
+                <a href="/" class="text-gray-700 hover:text-gray-900">Acara</a>
                 {% if current_user.is_authenticated %}
                     <span class="text-gray-700">Selamat datang, {{ current_user.username }}!</span>
                     <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-gray-900">Logout</a>
@@ -29,7 +29,7 @@
         </div>
     </nav>
     {% endblock %}
-    <div class="container flex flex-col items-center justify-center h-screen mt-16">
+    <div class="container flex flex-col items-center justify-center h-full mt-16">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -44,7 +44,7 @@
     {% block footer %}
     <footer class="bg-white shadow-md w-full py-4 mt-4">
         <div class="container mx-auto text-center text-gray-700">
-            &copy; 2023 Ecommerce Manud Jaya. All rights reserved.
+            Hak cipta &copy; 2023 E-Manja. Seluruh hak cipta dilindungi undang-undang.
         </div>
     </footer>
     {% endblock %}
