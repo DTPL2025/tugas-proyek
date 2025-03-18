@@ -1,21 +1,25 @@
 {% extends "base.jinja" %}
 {% block title %}Daftar Produk{% endblock %}
 {% block body %}
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="bg-gray-100 flex items-center justify-center min-h-screen pt-16 pb-16"> <!-- Added pt-16 and pb-16 for padding -->
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 class="text-2xl font-bold mb-6 text-center">Daftar Produk</h1>
         
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {% for product in products %}
                 <div class="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200 flex flex-col items-center">
-                    <h2 class="text-lg font-semibold text-gray-900 text-center">{{ product.name }}</h2>
+                    <h2 class="text-lg font-bold text-gray-900 text-center break-words overflow-hidden overflow-ellipsis" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; height: 6em;">
+                        {{ product.name }}
+                    </h2>
 
                     <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
                          alt="{{ product.name }}" width="100" height="100" 
                          class="border rounded w-32 h-32 object-cover mt-2">
 
-                    <p class="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">{{ product.description }}</p>
-                    <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ product.price }}</p>
+                    <p class="text-sm text-gray-600 mt-2 break-words overflow-hidden overflow-ellipsis" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                        {{ product.description }}
+                    </p>
+                    <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ "{:,}".format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
                     <p class="text-gray-700">Stok: {{ product.stock }} Unit</p>
                     <p class="text-gray-500 text-sm italic">Dijual oleh: <strong>{{ product.seller.name }}</strong></p>
 
@@ -38,5 +42,5 @@
             {% endfor %}
         </div>
     </div>
-</body>
+</div>
 {% endblock %}

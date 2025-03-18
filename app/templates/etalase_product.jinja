@@ -46,7 +46,7 @@
                          class="w-32 h-32 object-cover rounded mt-2" style="width: 100px; height: 100px;">
                     
                     <p class="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">{{ product.description }}</p>
-                    <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ product.price }}</p>
+                    <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ "{:,}".format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
                     <p class="text-gray-700">Stok: {{ product.stock }} Unit</p>
                     
                     <div class="mt-4 flex justify-between">
