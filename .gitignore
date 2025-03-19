@@ -10,3 +10,4 @@ app/static/product_images/*
 !app/static/product_images/default.jpg
 migrations/
 .vscode
+*.db

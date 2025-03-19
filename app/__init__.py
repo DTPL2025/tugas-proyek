@@ -5,6 +5,7 @@ from flask_login import LoginManager
 from flask_migrate import Migrate
 from flasgger import Swagger
 from app.swagger import init_swagger
+import flask_monitoringdashboard as dashboard
 
 app = Flask(__name__)
 app.config.from_object('config.Config')
@@ -24,3 +25,5 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 from app import routes
+
+dashboard.bind(app)
