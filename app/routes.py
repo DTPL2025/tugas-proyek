@@ -5,7 +5,6 @@ from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
 from app.forms import LoginForm, RegisterForm, ProductForm
 from app.models import User, Product
-from flask import session
 from flasgger import swag_from
 
 def save_image(form_image):
