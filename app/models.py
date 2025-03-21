@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask_login import UserMixin
 from app import db
 from sqlalchemy import Enum
@@ -20,3 +21,21 @@ class Product(db.Model):
     weight = db.Column(db.Integer, nullable=False)
     image_file = db.Column(db.String(100), nullable=False, default='default.jpg')
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    destination = db.Column(db.String(200), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    product = db.relationship('Product', backref='order', lazy=True)
+    name = db.Column(db.String(50), nullable=False)
+    total_price = db.Column(db.Integer, nullable=False)
+    seller_name = db.Column(db.String(50), nullable=False)
+    status = db.Column(
+        Enum('Menunggu pembayaran',
+            'Diproses',
+            'Batal',
+            'Sampai tujuan',
+            name='order_status'), nullable=False, default='Menunggu pembayaran')
+    payment_file = db.Column(db.String(100), nullable=True)
+    receipt_code = db.Column(db.String(50), nullable=True)
+    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
