@@ -5,25 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Judul Halaman{% endblock %}</title>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="//unpkg.com/alpinejs" defer></script>
 </head>
-<style>
-    body {
-        background-image: url('/static/images/bg_nonberanda.jpg');
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-position: center; /* Atur posisi background agar tengah secara vertikal */
-    }
-    section {
-        width: 600px; /* Atur lebar spesifik sesuai kebutuhan Anda */
-        margin: 0 auto; /* Menengahkan elemen secara horizontal */
-    }
-</style>
-<body class="bg-[#363932] flex flex-col items-center">
+<body class="bg-[#363932] flex flex-col items-center bg-[url('/static/images/bg_nonberanda.jpg')] bg-cover bg-no-repeat bg-fixed bg-center">
     <nav class="bg-[#41453C] shadow-md w-full fixed top-0 z-50">
         <div class="container mx-auto px-4 py-2 flex justify-between items-center">
             <a href="{{ url_for('home') }}" class="text-white font-bold">E-Manja</a>
-            <a href="{{ url_for('checkout', product_id=1, amount=1) }}" class="text-white font-bold">Checkout</a>
             <div class="space-x-4">
                 <a href="{{ url_for('home') }}" class="text-gray-200 hover:text-gray-400">Beranda</a>
                 {% if current_user.role == 'Penjual' %}
@@ -45,9 +32,20 @@
     <div class="container flex flex-col items-center justify-center min-h-screen mt-16">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
+                <div class="fixed bottom-5 right-5 transform z-50">
+                    {% for category, message in messages %}
+                        <div x-data="{ show: true }" x-init="setTimeout(() => show = false, 3000)" x-show="show"
+                            x-transition:enter="ease-out duration-500"
+                            x-transition:enter-start="opacity-0 scale-90"
+                            x-transition:enter-end="opacity-100 scale-100"
+                            x-transition:leave="ease-in duration-250"
+                            x-transition:leave-start="opacity-100 scale-100"
+                            x-transition:leave-end="opacity-0 scale-95"
+                            class="border-green-500 bg-green-400 {{ 'border-red-500 bg-red-400' if category == 'danger' }} border-2 text-white px-4 py-2 rounded shadow-lg mb-2">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                </div>
             {% endif %}
         {% endwith %}
         {% block body %}
@@ -62,4 +60,17 @@
     </footer>
     {% endblock %}
 </body>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(function () {
+      let alerts = document.querySelectorAll(".alert");
+      alerts.forEach(function (alert) {
+        alert.classList.add("opacity-0"); // Tambahkan efek transparan
+        setTimeout(function () {
+          alert.remove();
+        }, 500); // Hapus elemen setelah efek
+      });
+    }, 3000); // Menghilang setelah 3 detik
+  });
+</script>
 </html>

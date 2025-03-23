@@ -1,33 +1,7 @@
 {% extends "base.jinja" %}
 {% block title %}Produk yang Dijual{% endblock %}
 {% block body %}
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% if messages %}
-    <div class="fixed top-5 right-5 z-50">
-      {% for category, message in messages %}
-        <div class="alert bg-green-500 text-white px-4 py-2 rounded shadow-lg mb-2 transition-opacity duration-500">
-          {{ message }}
-        </div>
-      {% endfor %}
-    </div>
-  {% endif %}
-{% endwith %}
-
 <body class="flex items-center justify-center min-h-screen">
-<script>
-  document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(function () {
-      let alerts = document.querySelectorAll(".alert");
-      alerts.forEach(function (alert) {
-        alert.classList.add("opacity-0"); // Tambahkan efek transparan
-        setTimeout(function () {
-          alert.remove();
-        }, 500); // Hapus elemen setelah efek
-      });
-    }, 3000); // Menghilang setelah 3 detik
-  });
-</script>
-
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 class="text-2xl font-bold mb-6 text-center">Produk yang Dijual oleh {{ current_user.username }}</h1>
         
@@ -45,7 +19,7 @@
                          alt="{{ product.name }}" width="100" height="100" class="border rounded"
                          class="w-32 h-32 object-cover rounded mt-2" style="width: 100px; height: 100px;">
                     
-                    <p class="text-sm text-gray-600 mt-2 break-words whitespace-pre-wrap">{{ product.description }}</p>
+                    <p class="text-sm text-gray-600 mt-2 break-words overflow-hidden overflow-ellipsis" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;"">{{ product.description }}</p>
                     <p class="text-gray-700 font-semibold mt-2">Harga: Rp. {{ "{:,}".format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
                     <p class="text-gray-700">Stok: {{ product.stock }} Unit</p>
                     
