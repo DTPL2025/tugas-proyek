@@ -4,7 +4,7 @@ import secrets
 from flask import url_for, render_template, flash, redirect, request
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
-from app.forms import LoginForm, OrderForm, RegisterForm, ProductForm
+from app.forms import LoginForm, OrderForm, RegisterForm, ProductForm, ResetPasswordForm
 from app.models import Order, User, Product
 from flasgger import swag_from
 
@@ -54,6 +54,20 @@ def register():
         db.session.commit()
         return redirect(url_for('login'))
     return render_template('register.jinja', form=form)
+
+@app.route('/reset-password', methods=['GET', 'POST'])
+@login_required
+@swag_from('docs/reset_password.yml')
+def reset_password():
+    form = ResetPasswordForm()
+    prev_page = request.args.get('prev')
+    if form.validate_on_submit():
+        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
+        current_user.password = hashed_password
+        db.session.commit()
+        flash('Password Anda telah diubah!', 'success')
+        return redirect(prev_page or url_for('home'))
+    return render_template('reset_password.jinja', form=form)
 
 @app.route('/logout')
 @login_required

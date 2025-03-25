@@ -20,6 +20,7 @@
                 <a href="/" class="text-gray-200 hover:text-gray-400">Acara</a>
                 {% if current_user.is_authenticated %}
                     <span class="text-gray-200">Selamat datang, {{ current_user.username }}!</span>
+                    <a href="{{ url_for('reset_password') }}" class="text-gray-200 hover:text-gray-400">Reset Password</a>
                     <a href="{{ url_for('logout') }}" class="text-gray-200 hover:text-gray-400">Logout</a>
                 {% else %}
                     <a href="{{ url_for('register') }}" class="text-gray-200 hover:text-gray-400">Daftar</a>

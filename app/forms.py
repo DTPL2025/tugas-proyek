@@ -40,6 +40,17 @@ class LoginForm(FlaskForm):
     password = PasswordField('Password', validators=[DataRequired()])
     submit = SubmitField('Login')
 
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('Password', validators=[DataRequired()])
+    confirm_password = PasswordField('Konfirmasi Password', validators=[DataRequired()])
+    submit = SubmitField('Reset Password')
+    
+    def validate_confirm_password(self, confirm_password):
+        if self.errors:
+            return
+        if self.password.data != confirm_password.data:
+            raise ValidationError('Password dan konfirmasi password tidak sama.')
+
 class ProductForm(FlaskForm):
     name = StringField('Nama Produk', validators=[DataRequired()])
     description = TextAreaField('Deskripsi Produk', validators=[Length(max=750)])
