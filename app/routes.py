@@ -3,10 +3,12 @@ import secrets
 from flask import url_for, render_template, flash, redirect, request
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
-from app.forms import LoginForm, RegisterForm, ProductForm
-from app.models import User, Product
+from app.forms import LoginForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm
+from app.models import User, Product, Cart, Order
 from flasgger import swag_from
-
+from app.models import OrderDetail
+from app.models import Order, OrderDetail
+from app.forms import OrderStatusUpdateForm
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
@@ -94,6 +96,39 @@ def create_product():
 def katalog_product():
     products = Product.query.order_by(Product.name.asc()).all() 
     return render_template('katalog_product.jinja', products=products)
+
+@app.route('/cart/add/<int:product_id>', methods=['POST'])
+@login_required
+def add_to_cart(product_id):
+    product = Product.query.get_or_404(product_id)
+    # Cek apakah produk sudah ada di cart pengguna
+    cart_item = Cart.query.filter_by(user_id=current_user.id, product_id=product.id).first()
+    if cart_item:
+        # Jika produk sudah ada di cart, tambahkan kuantitasnya
+        cart_item.quantity += 1
+    else:
+        # Jika produk belum ada di cart, tambahkan produk baru ke cart
+        cart_item = Cart(user_id=current_user.id, product_id=product.id, quantity=1)
+        db.session.add(cart_item)
+    db.session.commit()
+    flash('Produk berhasil ditambahkan ke keranjang!', 'success')
+    return redirect(url_for('katalog_product'))
+
+
+@app.route('/cart/update/<int:cart_item_id>', methods=['GET', 'POST'])
+@login_required
+@swag_from('docs/cart_update.yml')
+def update_cart(cart_item_id):
+    cart_item = Cart.query.get_or_404(cart_item_id)
+    form = CartUpdateForm()
+
+    if form.validate_on_submit():
+        cart_item.quantity = form.quantity.data
+        db.session.commit()
+        flash('Kuantitas produk telah diperbarui!', 'success')
+        return redirect(url_for('view_cart'))
+
+    return render_template('update_cart.jinja', form=form, cart_item=cart_item)
 
 @app.route('/produk/saya')
 @login_required
@@ -206,3 +241,145 @@ def detail_product(product_id):
         return redirect(request.referrer or url_for('katalog_product'))
 
     return render_template('detail_product.jinja', product=product)
+@app.route('/cart', methods=['GET', 'POST'])
+@login_required
+@swag_from('docs/cart_view.yml')
+def view_cart():
+    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
+    
+    # Membuat form untuk setiap item cart
+    form = {}
+    for item in cart_items:
+        form[item.id] = CartUpdateForm()
+
+    if not cart_items:
+        flash('Keranjang Anda kosong.', 'info')
+    
+    if request.method == 'POST':
+        # Proses pembaruan kuantitas di cart
+        for item in cart_items:
+            if form[item.id].validate_on_submit():
+                item.quantity = form[item.id].quantity.data
+                db.session.commit()
+                flash('Kuantitas produk telah diperbarui!', 'success')
+
+    return render_template('cart.jinja', cart_items=cart_items, form=form)
+
+    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
+    
+    # Membuat form untuk setiap item cart
+    form = {}
+    for item in cart_items:
+        form[item.id] = CartUpdateForm()
+
+    if not cart_items:
+        flash('Keranjang Anda kosong.', 'info')
+    
+    if request.method == 'POST':
+        # Proses pembaruan kuantitas di cart
+        for item in cart_items:
+            if form[item.id].validate_on_submit():
+                item.quantity = form[item.id].quantity.data
+                db.session.commit()
+                flash('Kuantitas produk telah diperbarui!', 'success')
+
+    return render_template('cart.jinja', cart_items=cart_items, form=form)
+
+@app.route('/cart/delete/<int:cart_item_id>', methods=['POST'])
+@login_required
+@swag_from('docs/cart_delete.yml')
+def delete_cart_item(cart_item_id):
+    cart_item = Cart.query.get_or_404(cart_item_id)
+
+    # Pastikan hanya pemilik cart yang dapat menghapus
+    if cart_item.user_id != current_user.id:
+        flash('Anda tidak memiliki izin untuk menghapus item ini.', 'danger')
+        return redirect(url_for('view_cart'))
+
+    db.session.delete(cart_item)
+    db.session.commit()
+    flash('Produk berhasil dihapus dari keranjang.', 'success')
+    return redirect(url_for('view_cart'))
+@app.route('/checkout', methods=['GET', 'POST'])
+@login_required
+def checkout():
+    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
+
+    if request.method == 'POST':
+        # Ambil data dari form
+        address = request.form['address']
+        payment_method = request.form['payment_method']
+
+        # Buat pesanan baru
+        order = Order(user_id=current_user.id, address=address, payment_method=payment_method, status='Menunggu Pembayaran')
+        
+        # Simpan pesanan baru terlebih dahulu ke database
+        db.session.add(order)
+        db.session.commit()  # Pastikan pesanan sudah disimpan sebelum detail pesanan ditambahkan
+
+        # Tambahkan detail pesanan untuk setiap item di keranjang
+        for item in cart_items:
+            order_detail = OrderDetail(
+                order_id=order.id,  # Kini order_id sudah ada setelah commit
+                product_id=item.product.id,
+                quantity=item.quantity,
+                price=item.product.price
+            )
+            db.session.add(order_detail)
+
+        # Hapus isi keranjang setelah pesanan diproses
+        db.session.query(Cart).filter_by(user_id=current_user.id).delete()
+        db.session.commit()
+
+        flash('Pesanan Anda telah diproses! Kami akan mengonfirmasi pesanan Anda segera.', 'success')
+        return redirect(url_for('home'))  # Redirect ke halaman utama atau halaman yang diinginkan
+
+    return render_template('checkout.jinja', cart_items=cart_items)
+
+@app.route('/order/manage', methods=['GET', 'POST'])
+@login_required
+def manage_orders():
+    if current_user.role != 'Penjual':  # Hanya penjual yang boleh mengakses halaman ini
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+
+    orders = Order.query.all()  # Ambil semua order dari database
+
+    return render_template('manage_orders.jinja', orders=orders)
+@app.route('/order/update/<int:order_id>', methods=['GET', 'POST'])
+@login_required
+def update_order(order_id):
+   
+
+    order = Order.query.get_or_404(order_id)
+
+   
+
+    form = OrderStatusUpdateForm()
+
+    if form.validate_on_submit():
+        order.status = form.status.data
+        db.session.commit()
+        flash('Status pesanan telah diperbarui!', 'success')
+        return redirect(url_for('view_orders'))
+
+    return render_template('update_order.jinja', form=form, order=order)
+
+@app.route('/orders')
+@login_required
+def view_orders():
+    if current_user.role != 'Penjual':
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+
+    orders = Order.query.filter_by(user_id=current_user.id).all()
+    return render_template('view_orders.jinja', orders=orders)
+@app.route('/order/status', methods=['GET'])
+@login_required
+def view_order_status():
+    if current_user.role != 'Pembeli':
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+
+    orders = Order.query.filter_by(user_id=current_user.id).all()
+    return render_template('view_order_status.jinja', orders=orders)
