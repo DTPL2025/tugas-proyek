@@ -1,0 +1,34 @@
+{% extends "base.jinja" %}
+
+{% block title %}Status Pembelian{% endblock %}
+
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Status Pembelian</h1>
+
+    {% if orders %}
+        <table class="min-w-full table-auto bg-white p-4 rounded-lg shadow-md">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 text-left">ID Pesanan</th>
+                    <th class="px-4 py-2 text-left">Alamat Pengiriman</th>
+                    <th class="px-4 py-2 text-left">Metode Pembayaran</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td class="px-4 py-2">{{ order.id }}</td>
+                        <td class="px-4 py-2">{{ order.address }}</td>
+                        <td class="px-4 py-2">{{ order.payment_method }}</td>
+                        <td class="px-4 py-2">{{ order.status }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center text-gray-600">Anda belum melakukan pesanan.</p>
+    {% endif %}
+</div>
+{% endblock %}
