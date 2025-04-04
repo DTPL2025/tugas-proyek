@@ -3,8 +3,12 @@ from wtforms_alchemy import ModelForm
 from wtforms import StringField, PasswordField, SubmitField, IntegerField, FileField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, AnyOf
 from app.models import User
+from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed
-
+from wtforms import IntegerField, SubmitField
+from wtforms.validators import DataRequired, NumberRange
+from wtforms import SelectField, SubmitField
+from wtforms.validators import DataRequired
 class RegisterForm(ModelForm, FlaskForm):
     class Meta:
         model = User
@@ -48,3 +52,26 @@ class ProductForm(FlaskForm):
     image = FileField('Gambar Produk', validators=[FileAllowed(['jpg', 'png'], 'Format file tidak didukung! Harap unggah gambar dengan format JPG atau PNG.')])
     weight = IntegerField('Berat Produk (gram)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Tambah Produk')
+
+    class CartUpdateForm(FlaskForm):
+     quantity = IntegerField('Jumlah', validators=[DataRequired(), NumberRange(min=0)])
+    submit = SubmitField('Perbarui Kuantitas')
+class OrderStatusUpdateForm(FlaskForm):
+    status = StringField('Status Order', validators=[DataRequired()])
+    submit = SubmitField('Perbarui Status')
+class CartUpdateForm(FlaskForm):
+    quantity = IntegerField('Jumlah', validators=[DataRequired(), NumberRange(min=1)])
+    submit = SubmitField('Perbarui Kuantitas')
+class OrderStatusUpdateForm(FlaskForm):
+    status = StringField('Status Order', validators=[DataRequired()])
+    submit = SubmitField('Perbarui Status')
+
+
+class OrderStatusUpdateForm(FlaskForm):
+    status = SelectField('Order Status', choices=[
+        ('Menunggu Pembayaran', 'Menunggu Pembayaran'),
+        ('Sedang Diproses', 'Sedang Diproses'),
+        ('Dikirim', 'Dikirim'),
+        ('Selesai', 'Selesai'),
+    ], validators=[DataRequired()])
+    submit = SubmitField('Update Status')
