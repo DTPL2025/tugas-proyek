@@ -1,0 +1,70 @@
+{% extends "base.jinja" %}
+
+{% block title %}Checkout{% endblock %}
+
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Checkout</h1>
+
+    {% if cart_items %}
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Informasi Pembayaran</h2>
+
+            <form action="{{ url_for('checkout') }}" method="POST">
+                <!-- Form Input untuk Detail Pengiriman / Pembayaran -->
+                <div class="mb-4">
+                    <label for="address" class="block text-gray-700">Alamat Pengiriman</label>
+                    <input type="text" name="address" id="address" required class="w-full px-4 py-2 border rounded-md mt-2">
+                </div>
+
+                <div class="mb-4">
+                    <label for="payment_method" class="block text-gray-700">Metode Pembayaran</label>
+                    <select name="payment_method" id="payment_method" class="w-full px-4 py-2 border rounded-md mt-2">
+                        <option value="transfer">Transfer Bank</option>
+                        <option value="cod">Cash On Delivery</option>
+                    </select>
+                </div>
+
+                <div class="mb-4 text-right">
+                    <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded mt-4 hover:bg-green-600">
+                        Selesaikan Pembayaran
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Menampilkan Detail Cart -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4">Rincian Pesanan</h2>
+            <table class="w-full table-auto">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left">Produk</th>
+                        <th class="px-4 py-2 text-left">Harga</th>
+                        <th class="px-4 py-2 text-left">Kuantitas</th>
+                        <th class="px-4 py-2 text-left">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total = 0 %}
+                    {% for item in cart_items %}
+                        <tr>
+                            <td class="px-4 py-2">{{ item.product.name }}</td>
+                            <td class="px-4 py-2">Rp. {{ "{:,}".format(item.product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+                            <td class="px-4 py-2">{{ item.quantity }}</td>
+                            <td class="px-4 py-2">
+                                Rp. {{ "{:,}".format(item.product.price * item.quantity).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            </td>
+                        </tr>
+                        {% set total = total + (item.product.price * item.quantity) %}
+                    {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+    {% else %}
+        <p class="text-center text-gray-600">Keranjang Anda kosong, tidak dapat melanjutkan ke pembayaran.</p>
+    {% endif %}
+</div>
+{% endblock %}
