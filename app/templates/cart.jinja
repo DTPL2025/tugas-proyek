@@ -1,0 +1,64 @@
+{% extends "base.jinja" %}
+
+{% block title %}Keranjang Belanja{% endblock %}
+
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Keranjang Belanja</h1>
+
+    {% if cart_items %}
+        <div class="overflow-x-auto bg-white p-4 rounded-lg shadow-md">
+            <table class="min-w-full table-auto">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left">Produk</th>
+                        <th class="px-4 py-2 text-left">Harga</th>
+                        <th class="px-4 py-2 text-left">Jumlah Saat Ini</th>
+                        <th class="px-4 py-2 text-left">Kuantitas</th>
+                        <th class="px-4 py-2 text-left">Subtotal</th>
+                        <th class="px-4 py-2 text-left">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in cart_items %}
+                        <tr>
+                            <td class="px-4 py-2">
+                                <img src="{{ url_for('static', filename='product_images/' + item.product.image_file) }}" 
+                                     alt="{{ item.product.name }}" class="w-16 h-16 object-cover">
+                                {{ item.product.name }}
+                            </td>
+                            <td class="px-4 py-2">Rp. {{ "{:,}".format(item.product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+                            <td class="px-4 py-2 text-center">
+                                {{ item.quantity }} <!-- Tampilkan jumlah saat ini -->
+                            </td>
+                            <td class="px-4 py-2">
+                                <form action="{{ url_for('update_cart', cart_item_id=item.id) }}" method="POST" class="w-24">
+                                    {{ form[item.id].hidden_tag() }}
+                                    {{ form[item.id].quantity(class="px-3 py-2 border rounded-md") }}
+                                    <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Perbarui</button>
+                                </form>
+                            </td>
+                            <td class="px-4 py-2">
+                                Rp. {{ "{:,}".format(item.product.price * item.quantity).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            </td>
+                            <td class="px-4 py-2">
+                                <form action="{{ url_for('delete_cart_item', cart_item_id=item.id) }}" method="POST">
+                                    <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Hapus</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Total Harga -->
+        <div class="mt-4 text-right">
+            <a href="{{ url_for('checkout') }}" class="bg-green-500 text-white px-6 py-2 rounded mt-4 hover:bg-green-600">Lanjutkan ke Pembayaran</a>
+        </div>
+
+    {% else %}
+        <p class="text-center text-gray-600">Keranjang Anda kosong.</p>
+    {% endif %}
+</div>
+{% endblock %}
