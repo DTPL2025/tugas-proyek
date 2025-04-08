@@ -264,3 +264,28 @@ def payment(order_id):
     total price: {order.total_price}\n
     receipt: {order.receipt_code}
 '''
+
+@app.route('/produk/cari', methods=['GET'])
+@login_required
+@swag_from('docs/search_product.yml')
+def search_product():
+    if current_user.role != 'Penjual':
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+    
+    query = request.args.get('q', '').strip()  # Ambil parameter pencarian dari query string
+    if not query:
+        flash('Masukkan kata kunci untuk mencari produk.', 'warning')
+        return redirect(url_for('etalase_product'))
+    
+    # Cari produk berdasarkan nama yang dimiliki oleh penjual yang sedang login
+    products = Product.query.filter(
+        Product.seller_id == current_user.id,
+        Product.name.ilike(f'%{query}%')
+    ).all()
+    
+    if not products:
+        flash('Tidak ada produk yang ditemukan.', 'info')
+    return render_template('etalase_product.jinja', products=products)
+
+    
