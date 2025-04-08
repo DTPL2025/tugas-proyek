@@ -264,3 +264,16 @@ def payment(order_id):
     total price: {order.total_price}\n
     receipt: {order.receipt_code}
 '''
+
+@app.route('/produk/cari', methods=['GET'])
+@swag_from('docs/search_katalog.yml')
+def search_katalog():
+    query = request.args.get('q', '').strip()
+    if not query:
+        flash('Masukkan kata kunci untuk pencarian.', 'warning')
+        return redirect(url_for('katalog_product'))
+    
+    products = Product.query.filter(Product.name.ilike(f'%{query}%')).order_by(Product.name.asc()).all()
+    if not products:
+        flash('Tidak ada produk yang ditemukan.', 'info')
+    return render_template('search_katalog.jinja', products=products, query=query)
