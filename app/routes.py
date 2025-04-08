@@ -1,10 +1,11 @@
+from datetime import datetime
 import os
 import secrets
 from flask import url_for, render_template, flash, redirect, request
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
-from app.forms import LoginForm, RegisterForm, ProductForm
-from app.models import User, Product
+from app.forms import LoginForm, OrderForm, RegisterForm, ProductForm
+from app.models import Order, User, Product
 from flasgger import swag_from
 
 def save_image(form_image):
@@ -206,3 +207,60 @@ def detail_product(product_id):
         return redirect(request.referrer or url_for('katalog_product'))
 
     return render_template('detail_product.jinja', product=product)
+
+@app.route('/produk/checkout', methods=['GET', 'POST'])
+@login_required
+@swag_from('docs/checkout.yml')
+def checkout():
+    product_id = request.args.get('product_id', type=int)
+    amount = request.args.get('amount', type=int) or 1
+    product = Product.query.get_or_404(product_id)
+    product_form = ProductForm(obj=product)
+    
+    if product is None or product.stock <= 0:
+        flash("Maaf, produk tidak tersedia.", "danger")
+        return redirect(url_for('home'))
+    if product.stock < amount:
+        return handle_stock_issue(product)
+    form = OrderForm()
+    form.date.data = datetime.utcnow()
+
+    if form.validate_on_submit():
+        if product.stock < amount:
+            return handle_stock_issue(product)
+
+        order = Order(
+            destination=form.destination.data,
+            product_id=product_id,
+            name=product.name,
+            total_price=product.price * amount,
+            seller_name=product.seller.name,
+            date=datetime.utcnow()
+        )
+        db.session.add(order)
+        db.session.commit()
+        order.receipt_code = f"EMJ-{order.id}-{datetime.utcnow().strftime('%Y%m%d')}"
+        db.session.commit()
+        product.stock -= amount
+        db.session.commit()
+        return redirect(url_for('payment', order_id=order.id))
+    return render_template('checkout.jinja', form=form, product_form=product_form, amount=amount)
+
+def handle_stock_issue(product):
+    if product.stock == 0:
+        flash("Maaf, stok habis.", "warning")
+        return redirect(url_for('home'))
+    else:
+        flash("Maaf, stok tidak cukup.", "warning")
+        return redirect(url_for('checkout', product_id=product.id, amount=product.stock))
+
+@app.route('/produk/pembayaran/<int:order_id>', methods=['GET', 'POST'])
+@login_required
+@swag_from('docs/payment.yml')
+def payment(order_id):
+    order = Order.query.get_or_404(order_id)
+    return f'''
+    payment for order id: {order.id}\n
+    total price: {order.total_price}\n
+    receipt: {order.receipt_code}
+'''

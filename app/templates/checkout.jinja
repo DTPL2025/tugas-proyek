@@ -1,0 +1,66 @@
+{% extends "base.jinja" %}
+{% block title %}Checkout{% endblock %}
+{% block body %}
+<body class="bg-gray-100 flex items-center justify-center h-full">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
+        <h1 class="text-2xl font-bold mb-6 text-center">Checkout</h1>
+        <form method="POST" enctype="multipart/form-data" class="space-y-6">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                <div class="flex justify-between text-sm text-gray-500">
+                {{ form.destination.label(class="block text-sm font-medium text-gray-700") }}
+                    <div>
+                        <span>Karakter:</span>
+                        <span id="charCount">0</span>/200
+                    </div>
+                </div>
+                {{ form.destination(class="w-full p-2 border border-gray-300 rounded mt-1 h-32 resize-y align-top break-words whitespace-pre-wrap") }}
+            </div>
+            <div class="mb-4 flex flex-col items-center">
+                <img src="{{ url_for('static', filename='product_images/' + product_form.image_file.data) }}" 
+                    alt="Gambar Produk" class="border rounded w-48 h-48 object-cover shadow-md">
+            </div>
+            <div class="space-y-4">
+                <div class="grid gap-x-4 items-center" style="grid-template-columns: auto 1fr;">
+                    <label class="text-sm font-medium text-gray-700">Nama Produk:</label>
+                    <p>{{ product_form.name.data }}</p>
+                    
+                    <label class="text-sm font-medium text-gray-700">Harga:</label>
+                    <p>Rp {{ "{:,}".format(product_form.price.data).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
+                    
+                    <label class="text-sm font-medium text-gray-700">Jumlah:</label>
+                    <p>{{ amount }} unit</p>
+                    
+                    <label class="text-sm font-medium text-gray-700">Berat:</label>
+                    <p>{{ product_form.weight.data }} gram</p>
+                    
+                    <label class="text-sm font-medium text-gray-700">Total Harga:</label>
+                    <p>Rp {{ "{:,}".format(product_form.price.data*amount).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
+                </div>
+            </div>
+
+            <div class="form-group">
+            {{ form.submit(class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600") }}
+            </div>
+            {% if form.errors %}
+                <ul class="text-red-500">
+                    {% for field, errors in form.errors.items() %}
+                        {% for error in errors %}
+                            <li>{{ field }}: {{ error }}</li>
+                        {% endfor %}
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </form>
+    </div>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const textarea = document.querySelector('textarea[name="destination"]');
+        const charCount = document.getElementById('charCount');
+        textarea.addEventListener('input', function() {
+            charCount.textContent = textarea.value.length;
+        });
+    });
+</script>
+{% endblock %}
