@@ -1,66 +1,69 @@
 {% extends "base.jinja" %}
 {% block title %}Checkout{% endblock %}
-{% block body %}
-<body class="bg-gray-100 flex items-center justify-center h-full">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-2xl">
-        <h1 class="text-2xl font-bold mb-6 text-center">Checkout</h1>
-        <form method="POST" enctype="multipart/form-data" class="space-y-6">
-            {{ form.hidden_tag() }}
-            <div class="form-group">
-                <div class="flex justify-between text-sm text-gray-500">
-                {{ form.destination.label(class="block text-sm font-medium text-gray-700") }}
-                    <div>
-                        <span>Karakter:</span>
-                        <span id="charCount">0</span>/200
-                    </div>
-                </div>
-                {{ form.destination(class="w-full p-2 border border-gray-300 rounded mt-1 h-32 resize-y align-top break-words whitespace-pre-wrap") }}
-            </div>
-            <div class="mb-4 flex flex-col items-center">
-                <img src="{{ url_for('static', filename='product_images/' + product_form.image_file.data) }}" 
-                    alt="Gambar Produk" class="border rounded w-48 h-48 object-cover shadow-md">
-            </div>
-            <div class="space-y-4">
-                <div class="grid gap-x-4 items-center" style="grid-template-columns: auto 1fr;">
-                    <label class="text-sm font-medium text-gray-700">Nama Produk:</label>
-                    <p>{{ product_form.name.data }}</p>
-                    
-                    <label class="text-sm font-medium text-gray-700">Harga:</label>
-                    <p>Rp {{ "{:,}".format(product_form.price.data).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
-                    
-                    <label class="text-sm font-medium text-gray-700">Jumlah:</label>
-                    <p>{{ amount }} unit</p>
-                    
-                    <label class="text-sm font-medium text-gray-700">Berat:</label>
-                    <p>{{ product_form.weight.data }} gram</p>
-                    
-                    <label class="text-sm font-medium text-gray-700">Total Harga:</label>
-                    <p>Rp {{ "{:,}".format(product_form.price.data*amount).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
-                </div>
-            </div>
 
-            <div class="form-group">
-            {{ form.submit(class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600") }}
-            </div>
-            {% if form.errors %}
-                <ul class="text-red-500">
-                    {% for field, errors in form.errors.items() %}
-                        {% for error in errors %}
-                            <li>{{ field }}: {{ error }}</li>
-                        {% endfor %}
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Checkout</h1>
+
+    {% if cart_items %}
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-2xl font-semibold mb-4">Informasi Pembayaran</h2>
+
+            <form action="{{ url_for('checkout') }}" method="POST">
+                <!-- Form Input untuk Detail Pengiriman / Pembayaran -->
+                <div class="mb-4">
+                    <label for="address" class="block text-gray-700">Alamat Pengiriman</label>
+                    <input type="text" name="address" id="address" required class="w-full px-4 py-2 border rounded-md mt-2">
+                </div>
+
+                <div class="mb-4">
+                    <label for="payment_method" class="block text-gray-700">Metode Pembayaran</label>
+                    <select name="payment_method" id="payment_method" class="w-full px-4 py-2 border rounded-md mt-2">
+                        <option value="transfer">Transfer Bank</option>
+                        <option value="cod">Cash On Delivery</option>
+                    </select>
+                </div>
+
+                <div class="mb-4 text-right">
+                    <button type="submit" class="bg-green-500 text-white px-6 py-2 rounded mt-4 hover:bg-green-600">
+                        Selesaikan Pembayaran
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Menampilkan Detail Cart -->
+        <div class="bg-white p-6 rounded-lg shadow-md mt-6">
+            <h2 class="text-xl font-semibold mb-4">Rincian Pesanan</h2>
+            <table class="w-full table-auto">
+                <thead>
+                    <tr>
+                        <th class="px-4 py-2 text-left">Produk</th>
+                        <th class="px-4 py-2 text-left">Harga</th>
+                        <th class="px-4 py-2 text-left">Kuantitas</th>
+                        <th class="px-4 py-2 text-left">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set total = 0 %}
+                    {% for item in cart_items %}
+                        <tr>
+                            <td class="px-4 py-2">{{ item.product.name }}</td>
+                            <td class="px-4 py-2">Rp. {{ "{:,}".format(item.product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</td>
+                            <td class="px-4 py-2">{{ item.quantity }}</td>
+                            <td class="px-4 py-2">
+                                Rp. {{ "{:,}".format(item.product.price * item.quantity).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                            </td>
+                        </tr>
+                        {% set total = total + (item.product.price * item.quantity) %}
                     {% endfor %}
-                </ul>
-            {% endif %}
-        </form>
-    </div>
-</body>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const textarea = document.querySelector('textarea[name="destination"]');
-        const charCount = document.getElementById('charCount');
-        textarea.addEventListener('input', function() {
-            charCount.textContent = textarea.value.length;
-        });
-    });
-</script>
+                </tbody>
+            </table>
+
+        </div>
+
+    {% else %}
+        <p class="text-center text-gray-600">Keranjang Anda kosong, tidak dapat melanjutkan ke pembayaran.</p>
+    {% endif %}
+</div>
 {% endblock %}

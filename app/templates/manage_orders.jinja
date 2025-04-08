@@ -1,0 +1,40 @@
+{% extends "base.jinja" %}
+
+{% block title %}Manajemen Pesanan{% endblock %}
+
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-center">Manajemen Pesanan</h1>
+
+    {% if orders %}
+        <table class="min-w-full table-auto bg-white p-4 rounded-lg shadow-md">
+            <thead>
+                <tr>
+                    <th class="px-4 py-2 text-left">ID Pesanan</th>
+                    <th class="px-4 py-2 text-left">Nama Pembeli</th>
+                    <th class="px-4 py-2 text-left">Alamat Pengiriman</th>
+                    <th class="px-4 py-2 text-left">Metode Pembayaran</th>
+                    <th class="px-4 py-2 text-left">Status</th>
+                    <th class="px-4 py-2 text-left">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                    <tr>
+                        <td class="px-4 py-2">{{ order.id }}</td>
+                        <td class="px-4 py-2">{{ order.user.name }}</td>
+                        <td class="px-4 py-2">{{ order.address }}</td>
+                        <td class="px-4 py-2">{{ order.payment_method }}</td>
+                        <td class="px-4 py-2">{{ order.status }}</td>
+                        <td class="px-4 py-2">
+                            <a href="{{ url_for('update_order', order_id=order.id) }}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Perbarui Status</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="text-center text-gray-600">Tidak ada pesanan yang tersedia.</p>
+    {% endif %}
+</div>
+{% endblock %}
