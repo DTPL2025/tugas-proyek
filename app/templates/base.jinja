@@ -11,35 +11,35 @@
     {% block navbar %}
    <nav class="bg-[#41453C] shadow-md w-full fixed top-0 z-50">
     <div class="container mx-auto px-4 py-2 flex justify-between items-center">
-        <a href="{{ url_for('home') }}" class="text-xl font-bold">E-Manja</a>
+        <a href="{{ url_for('home') }}" class="text-xl text-[#F6CA89] font-bold">E-Manja</a>
         <div class="space-x-4">
-            <a href="{{ url_for('home') }}" class="text-gray-700 hover:text-gray-900">Beranda</a>
+            <a href="{{ url_for('home') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Beranda</a>
             
             {% if current_user.role == 'Penjual' %}
                 <!-- Link untuk Penjual -->
-                <a href="{{ url_for('etalase_product') }}" class="text-gray-700 hover:text-gray-900">Etalase</a>
-                <a href="{{ url_for('manage_orders') }}" class="text-gray-700 hover:text-gray-900">Manage Orders</a> <!-- Link Manage Orders -->
+                <a href="{{ url_for('etalase_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Etalase</a>
+                <a href="{{ url_for('manage_orders') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Manage Orders</a> <!-- Link Manage Orders -->
             {% endif %}
 
             {% if current_user.role == 'Pembeli' %}
                 <!-- Link untuk Pembeli -->
-                <a href="{{ url_for('view_order_status') }}" class="text-gray-700 hover:text-gray-900">Status Pembelian</a> <!-- Link Status Pembelian -->
+                <a href="{{ url_for('view_order_status') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Status Pembelian</a> <!-- Link Status Pembelian -->
             {% endif %}
 
-            <a href="{{ url_for('katalog_product') }}" class="text-gray-700 hover:text-gray-900">Katalog</a>
-            <a href="/" class="text-gray-700 hover:text-gray-900">Acara</a>
+            <a href="{{ url_for('katalog_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Katalog</a>
+            <a href="/" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Acara</a>
             
             {% if current_user.is_authenticated %}
                 <!-- Menampilkan Cart jika user sudah login -->
-                <a href="{{ url_for('view_cart') }}" class="text-gray-700 hover:text-gray-900">
+                <a href="{{ url_for('view_cart') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">
                     Keranjang 
                 </a>
                 
-                <span class="text-gray-700">Selamat datang, {{ current_user.username }}!</span>
-                <a href="{{ url_for('logout') }}" class="text-gray-700 hover:text-gray-900">Logout</a>
+                <span class="font-medium text-[#F6CA89]">Selamat datang, {{ current_user.username }}!</span>
+                <a href="{{ url_for('logout') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Logout</a>
             {% else %}
-                <a href="{{ url_for('register') }}" class="text-gray-700 hover:text-gray-900">Daftar</a>
-                <a href="{{ url_for('login') }}" class="text-gray-700 hover:text-gray-900">Login</a>
+                <a href="{{ url_for('register') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Daftar</a>
+                <a href="{{ url_for('login') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Login</a>
             {% endif %}
         </div>
     </div>
@@ -60,7 +60,7 @@
                             x-transition:leave="ease-in duration-250"
                             x-transition:leave-start="opacity-100 scale-100"
                             x-transition:leave-end="opacity-0 scale-95"
-                            class="border-green-500 bg-green-400 {{ 'border-red-500 bg-red-400' if category == 'danger' }} border-2 text-white px-4 py-2 rounded shadow-lg mb-2">
+                            class="border-green-500 bg-green-400 {{ 'border-red-500 bg-red-400' if category == 'danger' }} border-2 text-white font-medium px-4 py-2 rounded shadow-lg mb-2">
                                 {{ message }}
                             </div>
                         {% endfor %}
