@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms_alchemy import ModelForm
-from wtforms import StringField, PasswordField, SubmitField, IntegerField, FileField, TextAreaField
+from wtforms import DateField, StringField, PasswordField, SubmitField, IntegerField, FileField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, AnyOf
 from app.models import User
 from flask_wtf import FlaskForm
@@ -50,6 +50,7 @@ class ProductForm(FlaskForm):
     price = IntegerField('Harga Produk (Rp)', validators=[DataRequired(), NumberRange(min=0)])
     stock = IntegerField('Stok Produk (Unit)', validators=[DataRequired(), NumberRange(min=0)])
     image = FileField('Gambar Produk', validators=[FileAllowed(['jpg', 'png'], 'Format file tidak didukung! Harap unggah gambar dengan format JPG atau PNG.')])
+    image_file = StringField('Nama Produk')
     weight = IntegerField('Berat Produk (gram)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Tambah Produk')
 

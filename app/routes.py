@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 import secrets
 from flask import url_for, render_template, flash, redirect, request
@@ -241,6 +242,7 @@ def detail_product(product_id):
         return redirect(request.referrer or url_for('katalog_product'))
 
     return render_template('detail_product.jinja', product=product)
+
 @app.route('/cart', methods=['GET', 'POST'])
 @login_required
 @swag_from('docs/cart_view.yml')
@@ -383,3 +385,27 @@ def view_order_status():
 
     orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('view_order_status.jinja', orders=orders)
+
+
+@app.route('/produk/cari', methods=['GET'])
+@login_required
+@swag_from('docs/search_product.yml')
+def search_product():
+    if current_user.role != 'Penjual':
+        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        return redirect(url_for('home'))
+    
+    query = request.args.get('q', '').strip()  # Ambil parameter pencarian dari query string
+    if not query:
+        flash('Masukkan kata kunci untuk mencari produk.', 'warning')
+        return redirect(url_for('etalase_product'))
+    
+    # Cari produk berdasarkan nama yang dimiliki oleh penjual yang sedang login
+    products = Product.query.filter(
+        Product.seller_id == current_user.id,
+        Product.name.ilike(f'%{query}%')
+    ).all()
+    
+    if not products:
+        flash('Tidak ada produk yang ditemukan.', 'info')
+    return render_template('etalase_product.jinja', products=products)

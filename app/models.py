@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask_login import UserMixin
 from app import db
 from sqlalchemy import Enum
@@ -21,7 +22,6 @@ class Product(db.Model):
     weight = db.Column(db.Integer, nullable=False)
     image_file = db.Column(db.String(100), nullable=False, default='default.jpg')
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
     order_details = db.relationship('OrderDetail', backref='product', lazy=True)
 
 class Cart(db.Model):
