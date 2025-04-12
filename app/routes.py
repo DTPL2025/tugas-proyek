@@ -277,3 +277,16 @@ def search_katalog():
     if not products:
         flash('Tidak ada produk yang ditemukan.', 'info')
     return render_template('search_katalog.jinja', products=products, query=query)
+
+    @app.route('/produk/hapus_konfirmasi/<int:product_id>', methods=['GET'])
+    @login_required
+    @swag_from('docs/delete_product_confirmation.yml')
+    def delete_product_confirmation(product_id):
+        product = Product.query.get_or_404(product_id)
+
+        # Pastikan hanya pemilik produk yang bisa mengakses halaman ini
+        if product.seller_id != current_user.id:
+            flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+            return redirect(url_for('home'))
+
+        return render_template('delete_product.jinja', product=product)

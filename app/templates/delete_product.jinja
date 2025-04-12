@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete Product from Chart</title>
+</head>
+<body>
+    <h1>Delete Product from Chart</h1>
+    <p>Are you sure you want to remove the product "{{ product.name }}" from your chart?</p>
+    <form action="{{ url_for('delete_chart_product', product_id=product.id) }}" method="POST">
+        <input type="hidden" name="_method" value="DELETE">
+        <button type="submit">Yes, Remove</button>
+        <a href="{{ url_for('chart') }}">Cancel</a>
+    </form>
+</body>
+</html>
