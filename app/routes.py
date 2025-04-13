@@ -354,9 +354,6 @@ def update_order(order_id):
    
 
     order = Order.query.get_or_404(order_id)
-
-   
-
     form = OrderStatusUpdateForm()
 
     if form.validate_on_submit():
@@ -386,8 +383,21 @@ def view_order_status():
     orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('view_order_status.jinja', orders=orders)
 
-
-@app.route('/produk/cari', methods=['GET'])
+@app.route('/produk/cari-katalog', methods=['GET'])
+@swag_from('docs/search_katalog.yml')
+def search_katalog():
+    query = request.args.get('q', '').strip()
+    if not query:
+        flash('Masukkan kata kunci untuk pencarian.', 'warning')
+        return redirect(url_for('katalog_product'))
+    
+    products = Product.query.filter(Product.name.ilike(f'%{query}%')).order_by(Product.name.asc()).all()
+    if not products:
+        flash('Tidak ada produk yang ditemukan.', 'info')
+        
+    return render_template('search_katalog.jinja', products=products, query=query)
+  
+@app.route('/produk/cari-etalase', methods=['GET'])
 @login_required
 @swag_from('docs/search_product.yml')
 def search_product():
