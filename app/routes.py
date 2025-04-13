@@ -11,6 +11,9 @@ from app.models import OrderDetail
 from app.models import Order, OrderDetail
 from app.forms import OrderStatusUpdateForm
 from sqlalchemy.orm import joinedload  # pastikan ini ditambahkan di atas
+from werkzeug.utils import secure_filename
+import os, time, secrets
+
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
@@ -314,39 +317,79 @@ def delete_cart_item(cart_item_id):
     db.session.commit()
     flash('Produk berhasil dihapus dari keranjang.', 'success')
     return redirect(url_for('view_cart'))
+
+def save_payment_proof(uploaded_file):
+    import os, secrets, time
+    from werkzeug.utils import secure_filename
+
+    if not uploaded_file:
+        return None
+
+    allowed_extensions = {'.jpg', '.jpeg', '.png'}
+    filename = secure_filename(uploaded_file.filename)
+    ext = os.path.splitext(filename)[1].lower()
+
+    if ext not in allowed_extensions:
+        return None  # Bisa diganti return error kalau perlu
+
+    random_hex = secrets.token_hex(4)
+    timestamp = int(time.time())
+    new_filename = f"bukti_{timestamp}_{random_hex}{ext}"
+
+    # ✅ Path folder tujuan
+    upload_dir = os.path.join(app.root_path, 'static', 'bukti_pembayaran')
+
+    # ✅ Auto-buat folder jika belum ada
+    os.makedirs(upload_dir, exist_ok=True)
+
+    # ✅ Path lengkap file
+    upload_path = os.path.join(upload_dir, new_filename)
+
+    # ✅ Simpan file
+    uploaded_file.save(upload_path)
+
+    return new_filename
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @login_required
 def checkout():
     cart_items = Cart.query.filter_by(user_id=current_user.id).all()
 
     if request.method == 'POST':
-        # Ambil data dari form
         address = request.form['address']
         payment_method = request.form['payment_method']
+        bukti_file = request.files.get('bukti_pembayaran')
 
-        # Buat pesanan baru
-        order = Order(user_id=current_user.id, address=address, payment_method=payment_method, status='Menunggu Pembayaran')
-        
-        # Simpan pesanan baru terlebih dahulu ke database
+        # Simpan file jika metode transfer
+        nama_file_bukti = save_payment_proof(bukti_file) if payment_method == 'transfer' else None
+
+        # Buat dan simpan order
+        order = Order(
+            user_id=current_user.id,
+            address=address,
+            payment_method=payment_method,
+            status='Menunggu Pembayaran',
+            bukti_pembayaran=nama_file_bukti
+        )
         db.session.add(order)
-        db.session.commit()  # Pastikan pesanan sudah disimpan sebelum detail pesanan ditambahkan
+        db.session.commit()
 
-        # Tambahkan detail pesanan untuk setiap item di keranjang
+        # Simpan detail order
         for item in cart_items:
             order_detail = OrderDetail(
-                order_id=order.id,  # Kini order_id sudah ada setelah commit
+                order_id=order.id,
                 product_id=item.product.id,
                 quantity=item.quantity,
                 price=item.product.price
             )
             db.session.add(order_detail)
 
-        # Hapus isi keranjang setelah pesanan diproses
+        # Kosongkan keranjang
         db.session.query(Cart).filter_by(user_id=current_user.id).delete()
         db.session.commit()
 
         flash('Pesanan Anda telah diproses! Kami akan mengonfirmasi pesanan Anda segera.', 'success')
-        return redirect(url_for('home'))  # Redirect ke halaman utama atau halaman yang diinginkan
+        return redirect(url_for('home'))
 
     return render_template('checkout.jinja', cart_items=cart_items)
 

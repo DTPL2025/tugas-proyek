@@ -39,6 +39,7 @@ class Order(db.Model):
     address = db.Column(db.String(255), nullable=False)
     payment_method = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(50), default='Menunggu Pembayaran')
+    bukti_pembayaran = db.Column(db.String(255), nullable=True)
 
     order_details = db.relationship('OrderDetail', backref='order', lazy=True)
 
