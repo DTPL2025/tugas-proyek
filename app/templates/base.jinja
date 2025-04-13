@@ -8,26 +8,45 @@
     <script src="//unpkg.com/alpinejs" defer></script>
 </head>
 <body class="bg-[#363932] flex flex-col items-center bg-[url('/static/images/bg_nonberanda.jpg')] bg-cover bg-no-repeat bg-fixed bg-center">
-    <nav class="bg-[#41453C] shadow-md w-full fixed top-0 z-50">
-        <div class="container mx-auto px-4 py-2 flex justify-between items-center">
-            <a href="{{ url_for('home') }}" class="text-white font-bold">E-Manja</a>
-            <div class="space-x-4">
-                <a href="{{ url_for('home') }}" class="text-gray-200 hover:text-gray-400">Beranda</a>
-                {% if current_user.role == 'Penjual' %}
-                    <a href="{{ url_for('etalase_product') }}" class="text-gray-200 hover:text-gray-400">Etalase</a>
-                {% endif %}
-                <a href="{{ url_for('katalog_product') }}" class="text-gray-200 hover:text-gray-400">Katalog</a>
-                <a href="/" class="text-gray-200 hover:text-gray-400">Acara</a>
-                {% if current_user.is_authenticated %}
-                    <span class="text-gray-200">Selamat datang, {{ current_user.username }}!</span>
-                    <a href="{{ url_for('logout') }}" class="text-gray-200 hover:text-gray-400">Logout</a>
-                {% else %}
-                    <a href="{{ url_for('register') }}" class="text-gray-200 hover:text-gray-400">Daftar</a>
-                    <a href="{{ url_for('login') }}" class="text-gray-200 hover:text-gray-400">Login</a>
-                {% endif %}
-            </div>
+    {% block navbar %}
+   <nav class="bg-[#41453C] shadow-md w-full fixed top-0 z-50">
+    <div class="container mx-auto px-4 py-2 flex justify-between items-center">
+        <a href="{{ url_for('home') }}" class="text-xl text-[#F6CA89] font-bold">E-Manja</a>
+        <div class="space-x-4">
+            <a href="{{ url_for('home') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Beranda</a>
+            
+            {% if current_user.role == 'Penjual' %}
+                <!-- Link untuk Penjual -->
+                <a href="{{ url_for('etalase_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Etalase</a>
+                <a href="{{ url_for('manage_orders') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Manage Orders</a> <!-- Link Manage Orders -->
+            {% endif %}
+
+            {% if current_user.role == 'Pembeli' %}
+                <!-- Link untuk Pembeli -->
+                <a href="{{ url_for('view_order_status') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Status Pembelian</a> <!-- Link Status Pembelian -->
+            {% endif %}
+
+            <a href="{{ url_for('katalog_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Katalog</a>
+            <a href="/" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Acara</a>
+            
+            {% if current_user.is_authenticated %}
+                <!-- Menampilkan Cart jika user sudah login -->
+                <a href="{{ url_for('view_cart') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">
+                    Keranjang 
+                </a>
+                
+                <span class="font-medium text-[#F6CA89]">Selamat datang, {{ current_user.username }}!</span>
+                <a href="{{ url_for('logout') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Logout</a>
+            {% else %}
+                <a href="{{ url_for('register') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Daftar</a>
+                <a href="{{ url_for('login') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Login</a>
+            {% endif %}
         </div>
-    </nav>
+    </div>
+</nav>
+
+
+    {% endblock %}
 
     <div class="container flex flex-col items-center justify-center min-h-screen mt-16">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -41,7 +60,7 @@
                             x-transition:leave="ease-in duration-250"
                             x-transition:leave-start="opacity-100 scale-100"
                             x-transition:leave-end="opacity-0 scale-95"
-                            class="border-green-500 bg-green-400 {{ 'border-red-500 bg-red-400' if category == 'danger' }} border-2 text-white px-4 py-2 rounded shadow-lg mb-2">
+                            class="border-green-500 bg-green-400 {{ 'border-red-500 bg-red-400' if category == 'danger' }} border-2 text-white font-medium px-4 py-2 rounded shadow-lg mb-2">
                                 {{ message }}
                             </div>
                         {% endfor %}

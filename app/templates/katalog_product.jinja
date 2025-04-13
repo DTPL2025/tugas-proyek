@@ -28,16 +28,13 @@
                         <a href="{{ url_for('detail_product', product_id=product.id) }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 text-sm w-full sm:w-auto text-center">
                             Detail
                         </a>
-                        <a href="{{ url_for('checkout', product_id=product.id, amount=1) }}" class="bg-indigo-500 text-white px-4 py-2 rounded hover:bg-indigo-600 text-sm w-full sm:w-auto text-center">
-                            Checkout
-                        </a>
-                        {# <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="w-full sm:w-auto"> #}
-                        <form action="" method="POST" class="w-full sm:w-auto">
-                            <button type="submit" 
-                                    class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm w-full sm:w-auto">
-                                Tambah ke Keranjang
-                            </button>
-                        </form>
+                       <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="w-full sm:w-auto">
+    <button type="submit" 
+            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm w-full sm:w-auto">
+        Tambah ke Keranjang
+    </button>
+</form>
+
                     </div>
                 </div>
             {% else %}

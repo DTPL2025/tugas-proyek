@@ -2,7 +2,6 @@ from datetime import datetime
 from flask_login import UserMixin
 from app import db
 from sqlalchemy import Enum
-
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), nullable=False, unique=True)
@@ -10,7 +9,9 @@ class User(db.Model, UserMixin):
     name = db.Column(db.String(50), nullable=True)
     description = db.Column(db.Text, nullable=True)
     role = db.Column(Enum('Penjual', 'Pembeli', name='user_roles'), nullable=False, default='Pembeli')
+
     products = db.relationship('Product', backref='seller', lazy=True)
+    orders = db.relationship('Order', backref='user', lazy=True)
 
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,21 +22,29 @@ class Product(db.Model):
     weight = db.Column(db.Integer, nullable=False)
     image_file = db.Column(db.String(100), nullable=False, default='default.jpg')
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    order_details = db.relationship('OrderDetail', backref='product', lazy=True)
+
+class Cart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+    user = db.relationship('User', backref='cart_items', lazy=True)
+    product = db.relationship('Product', backref='carts', lazy=True)  # Relasi yang benar
 
 class Order(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    destination = db.Column(db.String(200), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    address = db.Column(db.String(255), nullable=False)
+    payment_method = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(50), default='Menunggu Pembayaran')
+
+    order_details = db.relationship('OrderDetail', backref='order', lazy=True)
+
+class OrderDetail(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('order.id'), nullable=False)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
-    product = db.relationship('Product', backref='order', lazy=True)
-    name = db.Column(db.String(50), nullable=False)
-    total_price = db.Column(db.Integer, nullable=False)
-    seller_name = db.Column(db.String(50), nullable=False)
-    status = db.Column(
-        Enum('Menunggu pembayaran',
-            'Diproses',
-            'Batal',
-            'Sampai tujuan',
-            name='order_status'), nullable=False, default='Menunggu pembayaran')
-    payment_file = db.Column(db.String(100), nullable=True)
-    receipt_code = db.Column(db.String(50), nullable=True)
-    date = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
+    quantity = db.Column(db.Integer, nullable=False)
+    price = db.Column(db.Integer, nullable=False)
