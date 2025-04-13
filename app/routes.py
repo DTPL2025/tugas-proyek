@@ -10,7 +10,7 @@ from flasgger import swag_from
 from app.models import OrderDetail
 from app.models import Order, OrderDetail
 from app.forms import OrderStatusUpdateForm
-from sqlalchemy.orm import joinedload  # pastikan ini ditambahkan di atas
+from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 import os, time, secrets
 
@@ -282,26 +282,6 @@ def view_cart():
 
     return render_template('cart.jinja', cart_items=cart_items, form=form)
 
-    cart_items = Cart.query.filter_by(user_id=current_user.id).all()
-    
-    # Membuat form untuk setiap item cart
-    form = {}
-    for item in cart_items:
-        form[item.id] = CartUpdateForm()
-
-    if not cart_items:
-        flash('Keranjang Anda kosong.', 'info')
-    
-    if request.method == 'POST':
-        # Proses pembaruan kuantitas di cart
-        for item in cart_items:
-            if form[item.id].validate_on_submit():
-                item.quantity = form[item.id].quantity.data
-                db.session.commit()
-                flash('Kuantitas produk telah diperbarui!', 'success')
-
-    return render_template('cart.jinja', cart_items=cart_items, form=form)
-
 @app.route('/cart/delete/<int:cart_item_id>', methods=['POST'])
 @login_required
 @swag_from('docs/cart_delete.yml')
@@ -408,8 +388,7 @@ def manage_orders():
         orders = Order.query.options(joinedload(Order.user)).all()
 
     return render_template('manage_orders.jinja', orders=orders)
-
-    return render_template('manage_orders.jinja', orders=orders)
+    
 @app.route('/order/update/<int:order_id>', methods=['GET', 'POST'])
 @login_required
 def update_order(order_id):
