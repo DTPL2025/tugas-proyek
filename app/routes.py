@@ -10,6 +10,7 @@ from flasgger import swag_from
 from app.models import OrderDetail
 from app.models import Order, OrderDetail
 from app.forms import OrderStatusUpdateForm
+from sqlalchemy.orm import joinedload  # pastikan ini ditambahkan di atas
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
@@ -349,14 +350,21 @@ def checkout():
 
     return render_template('checkout.jinja', cart_items=cart_items)
 
-@app.route('/order/manage', methods=['GET', 'POST'])
+@app.route('/order/manage')
 @login_required
 def manage_orders():
     if current_user.role != 'Penjual':  # Hanya penjual yang boleh mengakses halaman ini
-        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
+        flash('Akses ditolak. Halaman ini hanya untuk Penjual.', 'danger')
         return redirect(url_for('home'))
 
-    orders = Order.query.all()  # Ambil semua order dari database
+    status_filter = request.args.get('status')
+
+    if status_filter:
+        orders = Order.query.options(joinedload(Order.user)).filter_by(status=status_filter).all()
+    else:
+        orders = Order.query.options(joinedload(Order.user)).all()
+
+    return render_template('manage_orders.jinja', orders=orders)
 
     return render_template('manage_orders.jinja', orders=orders)
 @app.route('/order/update/<int:order_id>', methods=['GET', 'POST'])
@@ -378,12 +386,12 @@ def update_order(order_id):
 @app.route('/orders')
 @login_required
 def view_orders():
-    if current_user.role != 'Penjual':
-        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
-        return redirect(url_for('home'))
-
-    orders = Order.query.filter_by(user_id=current_user.id).all()
+    if current_user.role == 'Penjual':
+        orders = Order.query.options(joinedload(Order.user)).all()  # Penjual melihat semua pesanan
+    else:
+        orders = Order.query.options(joinedload(Order.user)).filter_by(user_id=current_user.id).all()  # Pembeli hanya lihat miliknya
     return render_template('view_orders.jinja', orders=orders)
+
 @app.route('/order/status', methods=['GET'])
 @login_required
 def view_order_status():
