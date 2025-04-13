@@ -95,7 +95,11 @@ def create_product():
 @app.route('/produk/list')
 @swag_from('docs/katalog_product.yml')
 def katalog_product():
-    products = Product.query.order_by(Product.name.asc()).all() 
+    query = request.args.get('q', '').strip()
+    if query:
+        products = Product.query.filter(Product.name.ilike(f'%{query}%')).order_by(Product.name.asc()).all()
+    else:
+        products = Product.query.order_by(Product.name.asc()).all() 
     return render_template('katalog_product.jinja', products=products)
 
 @app.route('/cart/add/<int:product_id>', methods=['POST'])
@@ -138,7 +142,14 @@ def etalase_product():
     if current_user.role != 'Penjual':
         flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
         return redirect(url_for('home'))
-    products = Product.query.filter_by(seller_id=current_user.id).all()
+    query = request.args.get('q', '').strip()  # Ambil parameter pencarian dari query string
+    if query:
+        products = Product.query.filter(
+            Product.seller_id == current_user.id,
+            Product.name.ilike(f'%{query}%')
+        ).all()
+    else:
+        products = Product.query.filter_by(seller_id=current_user.id).all()
     return render_template('etalase_product.jinja', products=products)
 
 @app.route('/produk/edit/<int:product_id>', methods=['GET', 'POST'])
@@ -382,40 +393,3 @@ def view_order_status():
 
     orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('view_order_status.jinja', orders=orders)
-
-@app.route('/produk/cari-katalog', methods=['GET'])
-@swag_from('docs/search_katalog.yml')
-def search_katalog():
-    query = request.args.get('q', '').strip()
-    if not query:
-        flash('Masukkan kata kunci untuk pencarian.', 'warning')
-        return redirect(url_for('katalog_product'))
-    
-    products = Product.query.filter(Product.name.ilike(f'%{query}%')).order_by(Product.name.asc()).all()
-    if not products:
-        flash('Tidak ada produk yang ditemukan.', 'info')
-        
-    return render_template('katalog_product.jinja', products=products)
-  
-@app.route('/produk/cari-etalase', methods=['GET'])
-@login_required
-@swag_from('docs/search_product.yml')
-def search_product():
-    if current_user.role != 'Penjual':
-        flash('Anda tidak memiliki izin untuk mengakses halaman ini.', 'danger')
-        return redirect(url_for('home'))
-    
-    query = request.args.get('q', '').strip()  # Ambil parameter pencarian dari query string
-    if not query:
-        flash('Masukkan kata kunci untuk mencari produk.', 'warning')
-        return redirect(url_for('etalase_product'))
-    
-    # Cari produk berdasarkan nama yang dimiliki oleh penjual yang sedang login
-    products = Product.query.filter(
-        Product.seller_id == current_user.id,
-        Product.name.ilike(f'%{query}%')
-    ).all()
-    
-    if not products:
-        flash('Tidak ada produk yang ditemukan.', 'info')
-    return render_template('etalase_product.jinja', products=products)
