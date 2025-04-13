@@ -54,20 +54,10 @@ class ProductForm(FlaskForm):
     weight = IntegerField('Berat Produk (gram)', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Tambah Produk')
 
-    class CartUpdateForm(FlaskForm):
-     quantity = IntegerField('Jumlah', validators=[DataRequired(), NumberRange(min=0)])
-    submit = SubmitField('Perbarui Kuantitas')
-class OrderStatusUpdateForm(FlaskForm):
-    status = StringField('Status Order', validators=[DataRequired()])
-    submit = SubmitField('Perbarui Status')
 class CartUpdateForm(FlaskForm):
     quantity = IntegerField('Jumlah', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Perbarui Kuantitas')
-class OrderStatusUpdateForm(FlaskForm):
-    status = StringField('Status Order', validators=[DataRequired()])
-    submit = SubmitField('Perbarui Status')
-
-
+    
 class OrderStatusUpdateForm(FlaskForm):
     status = SelectField('Order Status', choices=[
         ('Menunggu Pembayaran', 'Menunggu Pembayaran'),
