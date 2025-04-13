@@ -13,6 +13,13 @@
         <p><strong>Metode Pembayaran:</strong> {{ order.payment_method }}</p>
         <p><strong>Status Sekarang:</strong> {{ order.status }}</p>
 
+        {% if order.payment_method == 'transfer' and order.bukti_pembayaran %}
+        <p><strong>Bukti Pembayaran:</strong></p>
+        <img src="{{ url_for('static', filename='bukti_pembayaran/' ~ order.bukti_pembayaran) }}"
+             alt="Bukti Pembayaran"
+             class="mt-2 max-w-xs border rounded shadow">
+        {% endif %}
+
         <form method="POST" action="{{ url_for('update_order', order_id=order.id) }}">
             {{ form.hidden_tag() }}
             <div class="mb-4">
