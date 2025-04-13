@@ -395,7 +395,7 @@ def search_katalog():
     if not products:
         flash('Tidak ada produk yang ditemukan.', 'info')
         
-    return render_template('search_katalog.jinja', products=products, query=query)
+    return render_template('katalog_product.jinja', products=products)
   
 @app.route('/produk/cari-etalase', methods=['GET'])
 @login_required

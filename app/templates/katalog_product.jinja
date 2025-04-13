@@ -1,7 +1,16 @@
 {% extends "base.jinja" %}
 {% block title %}Daftar Produk{% endblock %}
 {% block body %}
-<div class=" flex items-center justify-center min-h-screen pt-16 pb-16"> <!-- Added pt-16 and pb-16 for padding -->
+<body class=" flex items-center justify-center min-h-screen"> <!-- Added pt-16 and pb-16 for padding -->
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl mb-8">
+            <form action="{{ url_for('search_katalog') }}" method="get" class="flex items-center">
+                <input type="text" name="q" placeholder="Cari produk..." 
+                       class="border border-gray-300 rounded-l px-4 py-2 w-full focus:outline-none focus:ring-2 focus:ring-blue-500" 
+                       required>
+                <button type="submit" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600">Cari</button>
+            </form>
+        </div>
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
         <h1 class="text-2xl font-bold mb-6 text-center">Daftar Produk</h1>
         
@@ -42,5 +51,5 @@
             {% endfor %}
         </div>
     </div>
-</div>
+</body>
 {% endblock %}
