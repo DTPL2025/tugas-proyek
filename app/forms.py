@@ -66,3 +66,13 @@ class OrderStatusUpdateForm(FlaskForm):
         ('Selesai', 'Selesai'),
     ], validators=[DataRequired()])
     submit = SubmitField('Update Status')
+
+class RatingForm(FlaskForm):
+    rating = SelectField('Rating', choices=[
+        (1, '⭐'),
+        (2, '⭐⭐'),
+        (3, '⭐⭐⭐'),
+        (4, '⭐⭐⭐⭐'),
+        (5, '⭐⭐⭐⭐⭐')], coerce=int, validators=[DataRequired()])
+    review = TextAreaField('Review', validators=[Length(max=500)])
+    submit = SubmitField('Submit Rating')

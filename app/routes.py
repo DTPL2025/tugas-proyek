@@ -4,8 +4,8 @@ import secrets
 from flask import url_for, render_template, flash, redirect, request
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
-from app.forms import LoginForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm
-from app.models import User, Product, Cart, Order
+from app.forms import LoginForm, RatingForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm
+from app.models import Rating, User, Product, Cart, Order
 from flasgger import swag_from
 from app.models import OrderDetail
 from app.models import Order, OrderDetail
@@ -245,18 +245,51 @@ def delete_product(product_id):
     flash('Produk telah dihapus!', 'success')
     return redirect(url_for('etalase_product'))
 
-@app.route('/produk/<int:product_id>')
+@app.route('/produk/<int:product_id>', methods=['GET', 'POST'])
 @swag_from('docs/detail_product.yml')
 def detail_product(product_id):
-    # Query produk berdasarkan ID
-    product = Product.query.get(product_id)
+    product = Product.query.get_or_404(product_id)
+    form = RatingForm()
 
-    # Jika produk tidak ditemukan, tampilkan pesan dan redirect
-    if product is None:
-        flash("Produk Tidak Ditemukan, kembali ke halaman produk.", "danger")
-        return redirect(request.referrer or url_for('katalog_product'))
+    has_ordered = False
+    previous_rating = None
 
-    return render_template('detail_product.jinja', product=product)
+    if current_user.is_authenticated:
+        # Check if the user has ordered this product
+        has_ordered = db.session.query(OrderDetail).join(Order).filter(
+            Order.user_id == current_user.id,
+            OrderDetail.product_id == product_id
+        ).count() > 0
+        # Check if the user has already rated this product
+        previous_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+
+        if form.validate_on_submit() and has_ordered:
+            # Check if the user has already rated this product
+            existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+            if existing_rating:
+                existing_rating.rating = form.rating.data
+                existing_rating.review = form.review.data
+            else:
+                new_rating = Rating(
+                    user_id=current_user.id,
+                    product_id=product_id,
+                    rating=form.rating.data,
+                    review=form.review.data
+                )
+                db.session.add(new_rating)
+            db.session.commit()
+            flash('Your rating has been submitted!', 'success')
+            return redirect(url_for('detail_product', product_id=product_id))
+
+        form.rating.data = previous_rating.rating if previous_rating else None
+        form.review.data = previous_rating.review if previous_rating else None
+
+    # Calculate rating statistics
+    ratings = Rating.query.filter_by(product_id=product_id).all()
+    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
+    rating_count = len(ratings)
+
+    return render_template('detail_product.jinja', product=product, form=form, ratings=ratings, average_rating=average_rating, rating_count=rating_count, has_ordered=has_ordered, previous_rating=previous_rating)
 
 @app.route('/cart', methods=['GET', 'POST'])
 @login_required
