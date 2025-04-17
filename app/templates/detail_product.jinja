@@ -1,5 +1,5 @@
 {% extends "base.jinja" %}
-{% block title %}Product Details{% endblock %}
+{% block title %}{{ product.name }}{% endblock %}
 
 {% block body %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
@@ -11,31 +11,90 @@
         <h1 class="text-2xl font-bold mb-6 text-center">{{ product.name }}</h1>
 
         <!-- Gambar Produk -->
-        <div class="flex justify-center mb-6">
+        <div class="flex justify-center">
             <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
                  alt="{{ product.name }}" 
                  class="border rounded w-60 h-60 object-cover shadow-md">
         </div>
 
+        <!-- Rating Produk -->
+        <p class="text-md font-bold text-gray-700 mt-2 mb-6">⭐ {{ average_rating|round(1) }} ({{ rating_count }} rating)</p>
         <!-- Detail Produk -->
         <div class="space-y-4 mb-6">
-            <p><span class="font-semibold">Deskripsi:</span> {{ product.description if product.description else 'Tidak ada deskripsi.' }}</p> 
+            <p style="white-space: pre-line;"><span class="font-semibold">Deskripsi:</span> {{ product.description if product.description else 'Tidak ada deskripsi.' }}</p> 
             <p><span class="font-semibold">Harga:</span> Rp. {{ "{:,}".format(product.price).replace(',', 'X').replace('.', ',').replace('X', '.') }}</p>
             <p><span class="font-semibold">Stok:</span> {{ product.stock }} Unit</p>
             <p><span class="font-semibold">Berat:</span> {{ product.weight }} gram</p>
             <p><span class="font-semibold">Penjual:</span> {{ product.seller.name if product.seller.name else 'Tidak diketahui' }}</p>
         </div>
-
+        
         <!-- Tombol Tambah ke Keranjang dan Beli Langsung -->
         <div class="space-y-3">
             <!-- Form Tambah ke Keranjang -->
            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="w-full sm:w-auto">
-    <button type="submit" 
-            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm w-full sm:w-auto">
-        Tambah ke Keranjang
-    </button>
-</form>
+                <button type="submit" 
+                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm w-full sm:w-auto">
+                    Tambah ke Keranjang
+                </button>
+            </form>
+        </div>
 
+        <!-- Rating Form -->
+        {% if has_ordered %}
+            <div class="mt-6">
+            <h2 class="text-lg font-bold">
+                {% if previous_rating %}
+                Edit Ulasan
+                {% else %}
+                Beri Ulasan
+                {% endif %}
+            </h2>
+            <form method="POST">
+                {{ form.hidden_tag() }}
+                <div class="form-group">
+                {{ form.rating.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.rating(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+                </div>
+                <div class="form-group">
+                {{ form.review.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.review(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+                </div>
+                <button type="submit" class="bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">
+                {% if previous_rating %}
+                    Update Ulasan
+                {% else %}
+                    Submit Ulasan
+                {% endif %}
+                </button>
+            </form>
+            </div>
+        {% else %}
+            <p class="mt-6 text-gray-500 italic">Anda hanya bisa menilai produk ini jika anda pernah membelinya.</p>
+        {% endif %}
+
+        <!-- Reviews -->
+        <div class="mt-6">
+            <h2 class="text-lg font-bold mt-2 pb-2">Ulasan Pembeli</h2>
+            <span class="text-2xl font-bold">⭐ {{ average_rating|round(1) }} </span> <span class="text-md">/ 5.0</span>
+            <div class="mt-2 pb-4">
+                <div class="text-gray-700 space-y-1">
+                {% for star in range(1, 6) %}
+                    <div class="flex justify-between w-48">
+                    <span>{{ '⭐' * star }}</span>
+                    <span>{{ ratings|selectattr('rating', 'eq', star)|list|length }} ulasan</span>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+            {% for rating in ratings|reverse %}
+                <div class="border-y border-gray-300 py-2">
+                    <p class="font-semibold">{{ rating.user.username }} - {{ '⭐' * rating.rating }}</p>
+                    <p class="text-gray-600">{{ rating.review }}</p>
+                    <p class="text-sm text-gray-500 italic">Direview pada {{ rating.created_at.strftime('%Y-%m-%d') }}</p>
+                </div>
+            {% else %}
+                <p class="text-gray-500 italic">Belum ada review produk.</p>
+            {% endfor %}
         </div>
 
     </div>
