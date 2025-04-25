@@ -277,3 +277,23 @@ def search_katalog():
     if not products:
         flash('Tidak ada produk yang ditemukan.', 'info')
     return render_template('search_katalog.jinja', products=products, query=query)
+
+    @app.route('/produk/<int:product_id>/diskusi', methods=['GET', 'POST'])
+    @login_required
+    @swag_from('docs/view_prod_disc_post.yml')
+    def view_prod_disc_post(product_id):
+        product = Product.query.get_or_404(product_id)
+
+        if request.method == 'POST':
+            content = request.form.get('content', '').strip()
+            if not content:
+                flash('Isi diskusi tidak boleh kosong.', 'warning')
+            else:
+                discussion = product.add_discussion(content=content, user_id=current_user.id)
+                db.session.add(discussion)
+                db.session.commit()
+                flash('Diskusi berhasil ditambahkan.', 'success')
+            return redirect(url_for('view_prod_disc_post', product_id=product_id))
+
+        discussions = product.get_discussions()
+        return render_template('view_prod_disc_post.jinja', product=product, discussions=discussions)

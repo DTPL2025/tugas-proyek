@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Discussion</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Product Discussion</h1>
+    </header>
+    <main>
+        <section class="product-details">
+            <h2>{{ product.name }}</h2>
+            <p>{{ product.description }}</p>
+            <p><strong>Price:</strong> ${{ product.price }}</p>
+        </section>
+
+        <section class="discussion-posts">
+            <h3>Discussion Posts</h3>
+            <ul>
+                {% for post in discussion_posts %}
+                <li>
+                    <p><strong>{{ post.user }}</strong> said:</p>
+                    <p>{{ post.content }}</p>
+                    <p class="timestamp">{{ post.timestamp }}</p>
+                </li>
+                {% else %}
+                <li>No discussion posts yet. Be the first to comment!</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <section class="add-post">
+            <h3>Add a Comment</h3>
+            <form action="/add_post" method="post">
+                <textarea name="content" rows="4" placeholder="Write your comment here..." required></textarea>
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                <button type="submit">Post Comment</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Your Company</p>
+    </footer>
+</body>
+</html>
