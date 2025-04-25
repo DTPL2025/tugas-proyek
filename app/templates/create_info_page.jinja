@@ -1,0 +1,21 @@
+{% extends "base.jinja" %}
+
+{% block title %}Tambah Informasi{% endblock %}
+
+{% block body %}
+<div class="bg-white p-8 max-w-2xl mx-auto mt-16 rounded shadow">
+    <h2 class="text-2xl font-bold mb-6 text-center">Tambah Informasi Produk</h2>
+    <form method="POST">
+        {{ form.hidden_tag() }}
+        <div class="mb-4">
+            {{ form.category.label(class="block text-sm font-bold text-gray-700") }}
+            {{ form.category(class="w-full p-2 border rounded") }}
+        </div>
+        <div class="mb-4">
+            {{ form.content.label(class="block text-sm font-bold text-gray-700") }}
+            {{ form.content(class="w-full p-4 border rounded h-40") }}
+        </div>
+        <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Simpan</button>
+    </form>
+</div>
+{% endblock %}
