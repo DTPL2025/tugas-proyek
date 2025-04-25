@@ -1,0 +1,27 @@
+{% extends "base.jinja" %}
+
+{% block title %}Informasi Produk{% endblock %}
+
+{% block body %}
+<div class="p-8 bg-white max-w-3xl mx-auto mt-10 shadow-md rounded">
+    <h1 class="text-2xl font-bold mb-4">Informasi Produk</h1>
+
+    <form method="GET">
+        <input type="text" name="q" value="{{ query }}" placeholder="Cari informasi..." class="border p-2 w-full mb-4 rounded">
+        <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded">Cari</button>
+    </form>
+
+    {% if info_pages %}
+        <ul class="space-y-4 mt-4">
+            {% for info in info_pages %}
+            <li class="p-4 bg-gray-100 rounded">
+                <h3 class="font-bold">{{ info.category }}</h3>
+                <p>{{ info.content }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-red-500 mt-4">Informasi tidak ditemukan.</p>
+    {% endif %}
+</div>
+{% endblock %}
