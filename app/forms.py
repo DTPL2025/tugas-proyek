@@ -1,14 +1,16 @@
+# forms.py
+
 from flask_wtf import FlaskForm
 from wtforms_alchemy import ModelForm
 from wtforms import DateField, StringField, PasswordField, SubmitField, IntegerField, FileField, TextAreaField
 from wtforms.validators import DataRequired, Length, EqualTo, ValidationError, NumberRange, AnyOf
 from app.models import User
-from flask_wtf import FlaskForm
 from flask_wtf.file import FileAllowed
 from wtforms import IntegerField, SubmitField
 from wtforms.validators import DataRequired, NumberRange
 from wtforms import SelectField, SubmitField
 from wtforms.validators import DataRequired
+
 class RegisterForm(ModelForm, FlaskForm):
     class Meta:
         model = User
@@ -57,7 +59,7 @@ class ProductForm(FlaskForm):
 class CartUpdateForm(FlaskForm):
     quantity = IntegerField('Jumlah', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Perbarui Kuantitas')
-    
+
 class OrderStatusUpdateForm(FlaskForm):
     status = SelectField('Order Status', choices=[
         ('Menunggu Pembayaran', 'Menunggu Pembayaran'),
@@ -68,11 +70,25 @@ class OrderStatusUpdateForm(FlaskForm):
     submit = SubmitField('Update Status')
 
 class RatingForm(FlaskForm):
-    rating = SelectField('Rating', choices=[
-        (1, '⭐'),
-        (2, '⭐⭐'),
-        (3, '⭐⭐⭐'),
-        (4, '⭐⭐⭐⭐'),
-        (5, '⭐⭐⭐⭐⭐')], coerce=int, validators=[DataRequired()])
+    rating = SelectField('Rating', choices=[(1, '⭐'), (2, '⭐⭐'), (3, '⭐⭐⭐'), (4, '⭐⭐⭐⭐'), (5, '⭐⭐⭐⭐⭐')], coerce=int, validators=[DataRequired()])
     review = TextAreaField('Review', validators=[Length(max=500)])
     submit = SubmitField('Submit Rating')
+    
+
+class DiscussionForm(FlaskForm):
+    title = StringField('Judul Diskusi', validators=[DataRequired(), Length(max=25)])
+    content = TextAreaField('Isi Diskusi', validators=[DataRequired()])
+    submit = SubmitField('Kirim Diskusi')
+
+class CommentForm(FlaskForm):
+    content = TextAreaField('Komentar', validators=[DataRequired(), Length(max=100)])
+    submit = SubmitField('Kirim Komentar')
+
+class InfoPageForm(FlaskForm):
+    category = SelectField('Kategori', choices=[
+        ('Panduan Pembelian', 'Panduan Pembelian'),
+        ('FAQ', 'FAQ'),
+        ('Kontak Dukungan', 'Kontak Dukungan')
+    ], validators=[DataRequired()])
+    content = TextAreaField('Konten', validators=[DataRequired()])
+    submit = SubmitField('Simpan')
