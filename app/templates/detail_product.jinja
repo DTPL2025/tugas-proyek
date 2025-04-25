@@ -1,10 +1,11 @@
 {% extends "base.jinja" %}
+
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block body %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
     <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-xl relative overflow-auto">
-        
+
         <!-- Tombol Kembali ke List Produk -->
         <a href="{{ url_for('katalog_product') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Kembali</a>
 
@@ -19,6 +20,7 @@
 
         <!-- Rating Produk -->
         <p class="text-md font-bold text-gray-700 mt-2 mb-6">⭐ {{ average_rating|round(1) }} ({{ rating_count }} rating)</p>
+
         <!-- Detail Produk -->
         <div class="space-y-4 mb-6">
             <p style="white-space: pre-line;"><span class="font-semibold">Deskripsi:</span> {{ product.description if product.description else 'Tidak ada deskripsi.' }}</p> 
@@ -27,73 +29,172 @@
             <p><span class="font-semibold">Berat:</span> {{ product.weight }} gram</p>
             <p><span class="font-semibold">Penjual:</span> {{ product.seller.name if product.seller.name else 'Tidak diketahui' }}</p>
         </div>
-        
+
         <!-- Tombol Tambah ke Keranjang dan Beli Langsung -->
         <div class="space-y-3">
-            <!-- Form Tambah ke Keranjang -->
-           <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="w-full sm:w-auto">
-                <button type="submit" 
-                        class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm w-full sm:w-auto">
+            <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST" class="w-full sm:w-auto">
+                <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-sm w-full sm:w-auto">
                     Tambah ke Keranjang
                 </button>
             </form>
         </div>
 
+        <!-- Informasi Panduan Pembelian, FAQ dan Kontak Dukungan -->
+        <div class="mt-6">
+            <h2 class="text-lg font-bold">Informasi Pembelian</h2>
+            
+            <!-- Search Form for Information -->
+            <form method="GET" action="{{ url_for('info_page') }}">
+                <div class="input-group mb-4">
+                    <input type="text" class="form-control" name="q" placeholder="Cari informasi..." value="{{ query }}">
+                    <button type="submit" class="btn btn-primary">Cari</button>
+                </div>
+            </form>
+
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold">Pilih Kategori</h2>
+                <ul>
+                    <li><a href="{{ url_for('info_page', category='Panduan Pembelian') }}" class="text-blue-500 hover:text-blue-600">Panduan Pembelian</a></li>
+                    <li><a href="{{ url_for('info_page', category='FAQ') }}" class="text-blue-500 hover:text-blue-600">FAQ</a></li>
+                    <li><a href="{{ url_for('info_page', category='Kontak Dukungan') }}" class="text-blue-500 hover:text-blue-600">Kontak Dukungan</a></li>
+                </ul>
+            </div>
+
+            <!-- Display Information -->
+            {% if info_pages %}
+                <div class="space-y-4">
+                    {% for info in info_pages %}
+                        <div class="p-4 bg-gray-50 rounded shadow-md">
+                            <h3 class="text-xl font-semibold">{{ info.category }}</h3>
+                            <p class="mt-2">{{ info.content }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p class="text-red-500">Tidak ada informasi yang ditemukan untuk kategori atau pencarian yang diminta.</p>
+            {% endif %}
+        </div>
+
+        <!-- CRUD Buttons for Seller -->
+        {% if current_user.role == 'Penjual' %}
+            <div class="mt-6">
+                <h2 class="text-lg font-bold">Tambah, Edit, atau Hapus Informasi</h2>
+                <div class="space-y-4 pt-4">
+                    <!-- Add New Information -->
+                    <a href="{{ url_for('create_info_page', product_id=product.id) }}" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">Tambah Informasi</a>
+                    
+                    {% for info in info_pages %}
+                        <!-- Edit Information -->
+                        <a href="{{ url_for('edit_info_page', info_id=info.id) }}" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">Edit Informasi</a>
+
+                        <!-- Delete Information -->
+                        <form method="POST" action="{{ url_for('delete_info_page', info_id=info.id) }}" class="inline">
+                            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600">Hapus Informasi</button>
+                        </form>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
         <!-- Rating Form -->
         {% if has_ordered %}
             <div class="mt-6">
-            <h2 class="text-lg font-bold">
-                {% if previous_rating %}
-                Edit Ulasan
-                {% else %}
-                Beri Ulasan
-                {% endif %}
-            </h2>
-            <form method="POST">
-                {{ form.hidden_tag() }}
-                <div class="form-group">
-                {{ form.rating.label(class="block text-sm font-medium text-gray-700") }}
-                {{ form.rating(class="w-full p-2 border border-gray-300 rounded mt-1") }}
-                </div>
-                <div class="form-group">
-                {{ form.review.label(class="block text-sm font-medium text-gray-700") }}
-                {{ form.review(class="w-full p-2 border border-gray-300 rounded mt-1") }}
-                </div>
-                <button type="submit" class="bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">
-                {% if previous_rating %}
-                    Update Ulasan
-                {% else %}
-                    Submit Ulasan
-                {% endif %}
-                </button>
-            </form>
+                <h2 class="text-lg font-bold">
+                    {% if previous_rating %}
+                    Edit Ulasan
+                    {% else %}
+                    Beri Ulasan
+                    {% endif %}
+                </h2>
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="form-group">
+                        {{ form.rating.label(class="block text-sm font-medium text-gray-700") }}
+                        {{ form.rating(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+                    </div>
+                    <div class="form-group">
+                        {{ form.review.label(class="block text-sm font-medium text-gray-700") }}
+                        {{ form.review(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+                    </div>
+                    <button type="submit" class="bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">
+                        {% if previous_rating %}
+                        Update Ulasan
+                        {% else %}
+                        Submit Ulasan
+                        {% endif %}
+                    </button>
+                </form>
             </div>
         {% else %}
             <p class="mt-6 text-gray-500 italic">Anda hanya bisa menilai produk ini jika anda pernah membelinya.</p>
         {% endif %}
 
-        <!-- Reviews -->
+        <!-- Diskusi Form -->
         <div class="mt-6">
-            <h2 class="text-lg font-bold mt-2 pb-2">Ulasan Pembeli</h2>
-            <span class="text-2xl font-bold">⭐ {{ average_rating|round(1) }} </span> <span class="text-md">/ 5.0</span>
-            <div class="mt-2 pb-4">
-                <div class="text-gray-700 space-y-1">
-                {% for star in range(1, 6) %}
-                    <div class="flex justify-between w-48">
-                    <span>{{ '⭐' * star }}</span>
-                    <span>{{ ratings|selectattr('rating', 'eq', star)|list|length }} ulasan</span>
-                    </div>
-                {% endfor %}
+            <h2 class="text-lg font-bold">Bertanya atau Berdiskusi</h2>
+            <form method="POST">
+                {{ discussion_form.hidden_tag() }}
+                <div class="form-group">
+                    {{ discussion_form.title.label(class="block text-sm font-medium text-gray-700") }}
+                    {{ discussion_form.title(class="w-full p-2 border border-gray-300 rounded mt-1") }}
                 </div>
-            </div>
-            {% for rating in ratings|reverse %}
-                <div class="border-y border-gray-300 py-2">
-                    <p class="font-semibold">{{ rating.user.username }} - {{ '⭐' * rating.rating }}</p>
-                    <p class="text-gray-600">{{ rating.review }}</p>
-                    <p class="text-sm text-gray-500 italic">Direview pada {{ rating.created_at.strftime('%Y-%m-%d') }}</p>
+                <div class="form-group">
+                    {{ discussion_form.content.label(class="block text-sm font-medium text-gray-700") }}
+                    {{ discussion_form.content(class="w-full p-2 border border-gray-300 rounded mt-1") }}
                 </div>
-            {% else %}
-                <p class="text-gray-500 italic">Belum ada review produk.</p>
+                <button type="submit" class="bg-blue-500 text-white text-sm px-4 py-2 rounded hover:bg-blue-600">
+                    Kirim Diskusi
+                </button>
+            </form>
+        </div>
+
+        <!-- Daftar Diskusi -->
+        <div class="mt-6">
+            <h2 class="text-lg font-bold">Diskusi</h2>
+            {% for discussion in discussions %}
+                <div class="border-t pt-4">
+                    <h3 class="text-xl font-semibold">{{ discussion.title }}</h3>
+                    <p>{{ discussion.content }}</p>
+                    
+                    {% if discussion.user_id == current_user.id %}
+                        <form action="{{ url_for('delete_discussion', discussion_id=discussion.id) }}" method="POST" class="mt-4">
+                            <button type="submit" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 text-sm">
+                                Hapus Diskusi
+                            </button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Komentar Form -->
+        <div class="mt-6">
+            <h2 class="text-lg font-bold">Komentar pada Produk</h2>
+            <form method="POST">
+                {{ comment_form.hidden_tag() }}
+                <div class="form-group">
+                    {{ comment_form.content.label(class="block text-sm font-medium text-gray-700") }}
+                    {{ comment_form.content(class="w-full p-2 border border-gray-300 rounded mt-1") }}
+                </div>
+                <button type="submit" class="bg-green-500 text-white text-sm px-4 py-2 rounded hover:bg-green-600">
+                    Kirim Komentar
+                </button>
+            </form>
+        </div>
+
+        <!-- Standalone Comments Display -->
+        <div class="mt-6">
+            <h2 class="text-lg font-bold">Komentar Produk</h2>
+            {% for comment in standalone_comments %}
+                <div>
+                    <p>{{ comment.content }} - {{ comment.user.name }}
+                        {% if comment.user.id == current_user.id %}
+                            <form action="{{ url_for('delete_comment', comment_id=comment.id) }}" method="POST" class="inline">
+                                <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm">Hapus Komentar</button>
+                            </form>
+                        {% endif %}
+                    </p>
+                </div>
             {% endfor %}
         </div>
 
