@@ -190,7 +190,7 @@
                     <p>{{ comment.content }} - {{ comment.user.name }}
                         {% if comment.user.id == current_user.id %}
                             <form action="{{ url_for('delete_comment', comment_id=comment.id) }}" method="POST" class="inline">
-                                <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm">Hapus Komentar</button>
+                                <button type="submit" class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 text-sm">Hapus Komentar ini</button>
                             </form>
                         {% endif %}
                     </p>
