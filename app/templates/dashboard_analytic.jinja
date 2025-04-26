@@ -1,0 +1,59 @@
+{% extends "base.jinja" %}
+{% block title %}Analitik Produk{% endblock %}
+{% block body %}
+<body class="flex items-center justify-center min-h-screen">
+
+<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl">
+    <h1 class="text-2xl font-bold mb-4 text-center">Dashboard Analitik - Produk {{ current_user.name }}</h1>
+
+    <!-- Total Summary -->
+    <div class="text-center mb-6">
+        <div class="flex flex-wrap justify-center gap-4">
+            <span class="inline-block bg-yellow-200 text-yellow-900 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm">
+                💰 Total Omset: Rp {{ "{:,}".format(total_omset).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+            </span>
+            <span class="inline-block bg-green-200 text-green-900 text-sm font-semibold px-4 py-2 rounded-lg shadow-sm">
+                📦 Total Penjualan: {{ total_penjualan or 0 }} unit
+            </span>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+        {% for p in products %}
+        <div class="bg-gray-50 p-4 rounded-lg shadow-md border border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900 text-center">{{ p.name }}</h2>
+            
+            <img src="{{ url_for('static', filename='product_images/' + p.image_file) }}"
+                 alt="{{ p.name }}"
+                 class="w-32 h-32 object-cover rounded mt-2 border"
+                 style="width: calc(100% - 16px); height: auto; display: block; margin: 0 auto;">
+
+            <!-- Rating -->
+            <p class="text-md font-bold text-gray-700 text-center mt-2 mb-2">
+                ⭐ {{ p.average_rating|round(1) }} ({{ p.rating_count }} rating)
+            </p>
+
+            <p class="text-gray-700 text-center">Sisa Stok: {{ p.stock or 0 }} Unit</p>
+
+            <div class="mt-2">
+            <div class="flex justify-center flex-wrap gap-2">
+                <button class="bg-blue-100 text-blue-800 text-xs font-semibold px-3 py-1 rounded hover:bg-blue-200">
+                    🧍‍♂️ {{ p.jumlah_pembeli or 0 }} Pembeli
+                </button>
+                <button class="bg-green-100 text-green-800 text-xs font-semibold px-3 py-1 rounded hover:bg-green-200">
+                    📦 {{ p.jumlah_terjual or 0 }} Terjual
+                </button>
+                <button class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-3 py-1 rounded hover:bg-yellow-200">
+                    💰 Rp {{ "{:,}".format(p.omset).replace(',', 'X').replace('.', ',').replace('X', '.') }}
+                </button>
+            </div>
+            </div>
+        </div>
+        {% else %}
+            <p class="text-center text-gray-600 col-span-full">Tidak ada produk yang ditemukan untuk penjual ini.</p>
+        {% endfor %}
+    </div>
+</div>
+
+</body>
+{% endblock %}

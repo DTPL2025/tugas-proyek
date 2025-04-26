@@ -20,6 +20,7 @@
                 <!-- Link untuk Penjual -->
                 <a href="{{ url_for('etalase_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Etalase</a>
                 <a href="{{ url_for('manage_orders') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Manage Orders</a> <!-- Link Manage Orders -->
+                <a href="{{ url_for('analytic_pembeli') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Analitik</a>
             {% endif %}
 
             {% if current_user.role == 'Pembeli' %}

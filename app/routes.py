@@ -8,9 +8,10 @@ from app.forms import LoginForm, RatingForm, RegisterForm, ProductForm, CartUpda
 from app.models import Rating, User, Product, Cart, Order
 from flasgger import swag_from
 from app.models import OrderDetail
-from app.models import Order, OrderDetail
+from app.models import Order, OrderDetail, Product
 from app.forms import OrderStatusUpdateForm
 from sqlalchemy.orm import joinedload
+from sqlalchemy import func, distinct
 from werkzeug.utils import secure_filename
 import os, time, secrets
 
@@ -29,7 +30,15 @@ def inject_user():
 @app.route('/')
 @swag_from('docs/home.yml')
 def home():
-    return render_template('home.jinja')
+    jumlah_penjual = User.query.filter_by(role='Penjual').count()
+    jumlah_pembeli = User.query.filter_by(role='Pembeli').count()
+    total_produk = Product.query.count()
+
+    return render_template('home.jinja',
+                       jumlah_penjual=jumlah_penjual,
+                       jumlah_pembeli=jumlah_pembeli,
+                       total_produk=total_produk)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @swag_from('docs/login.yml')
@@ -456,3 +465,67 @@ def view_order_status():
 
     orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('view_order_status.jinja', orders=orders)
+
+@app.route('/dashboard/analytics')
+@login_required
+def analytic_pembeli():
+    if current_user.role != 'Penjual':
+        flash('Halaman ini hanya dapat diakses oleh Penjual.', 'danger')
+        return redirect(url_for('home'))
+
+    produk_penjual = Product.query.filter_by(seller_id=current_user.id).all()
+    data = []
+    total_omset = 0
+    total_penjualan = 0
+
+    for produk in produk_penjual:
+        jumlah_pembeli = db.session.query(
+            func.count(distinct(Order.user_id))
+        ).join(OrderDetail, Order.id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.product_id == produk.id,
+            Order.status == 'Selesai'
+        ).scalar()
+
+        jumlah_terjual = db.session.query(
+            func.coalesce(func.sum(OrderDetail.quantity), 0)
+        ).join(Order, Order.id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.product_id == produk.id,
+            Order.status == 'Selesai'
+        ).scalar()
+
+        omset = db.session.query(
+            func.coalesce(func.sum(OrderDetail.quantity * OrderDetail.price), 0)
+        ).join(Order, Order.id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.product_id == produk.id,
+            Order.status == 'Selesai'
+        ).scalar()
+
+        average_rating = db.session.query(func.avg(Rating.rating)).filter(Rating.product_id == produk.id).scalar()
+        rating_count = db.session.query(func.count(Rating.rating)).filter(Rating.product_id == produk.id).scalar()
+
+        total_omset += omset or 0
+        total_penjualan += jumlah_terjual or 0
+
+        data.append({
+            'id': produk.id,
+            'name': produk.name,
+            'image_file': produk.image_file,
+            'description': produk.description,
+            'price': produk.price,
+            'stock': produk.stock,
+            'jumlah_pembeli': jumlah_pembeli or 0,
+            'jumlah_terjual': jumlah_terjual or 0,
+            'omset': omset or 0,
+            'average_rating': round(average_rating or 0, 1),
+            'rating_count': rating_count or 0
+        })
+
+    return render_template(
+        'dashboard_analytic.jinja',
+        products=data,
+        total_omset=total_omset,
+        total_penjualan=total_penjualan
+    )
