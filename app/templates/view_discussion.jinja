@@ -1,0 +1,20 @@
+{% extends "base.jinja" %}
+{% block title %}Panduan dan FAQ{% endblock %}
+
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <h1 class="text-3xl font-bold mb-6">Panduan Pembelian dan FAQ</h1>
+    <h2 class="text-2xl mb-4">Panduan Pembelian</h2>
+    {% for item in guide %}
+        <div class="bg-white p-4 mb-4 rounded-lg">
+            <p>{{ item.content }}</p>
+        </div>
+    {% endfor %}
+    <h2 class="text-2xl mb-4 mt-6">FAQ</h2>
+    {% for item in faq %}
+        <div class="bg-white p-4 mb-4 rounded-lg">
+            <p>{{ item.content }}</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

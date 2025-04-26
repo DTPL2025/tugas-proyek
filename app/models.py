@@ -113,3 +113,13 @@ class InfoPage(db.Model):
         return cls.query.filter_by(category=category).all()
 
 
+class Event(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    judul_acara = db.Column(db.String(200), nullable=False)
+    deskripsi_acara = db.Column(db.Text, nullable=False)
+    gambar_acara = db.Column(db.String(255), nullable=False)
+    tanggal_mulai = db.Column(db.Date, nullable=False)
+    tanggal_berakhir = db.Column(db.Date, nullable=False)
+
+    def __repr__(self):
+        return f"<Event {self.judul_acara}>"
