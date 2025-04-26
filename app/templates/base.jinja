@@ -20,6 +20,7 @@
                 <!-- Link untuk Penjual -->
                 <a href="{{ url_for('etalase_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Etalase</a>
                 <a href="{{ url_for('manage_orders') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Manage Orders</a> <!-- Link Manage Orders -->
+                <a href="{{ url_for('analytic_pembeli') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Analitik</a>
             {% endif %}
 
             {% if current_user.role == 'Pembeli' %}
@@ -28,7 +29,7 @@
             {% endif %}
 
             <a href="{{ url_for('katalog_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Katalog</a>
-            <a href="/" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Acara</a>
+            <a href="/event" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Acara</a>
             
             {% if current_user.is_authenticated %}
                 <!-- Menampilkan Cart jika user sudah login -->

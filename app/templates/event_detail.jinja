@@ -1,0 +1,24 @@
+{% extends "base.jinja" %}
+{% block title %}Detail Acara{% endblock %}
+
+{% block body %}
+<div class="max-w-4xl mx-auto py-10 px-4">
+    <div class="bg-white shadow-lg rounded-lg overflow-hidden">
+        <div class="h-[400px] w-full bg-center bg-contain bg-no-repeat"
+             style="background-image: url('{{ url_for('static', filename='event_images/' ~ event.gambar_acara) }}');">
+        </div>
+        <div class="p-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ event.judul_acara }}</h1>
+            <p class="text-gray-600 text-sm mb-4">
+                Tanggal: {{ event.tanggal_mulai.strftime('%d %B %Y') }} – {{ event.tanggal_berakhir.strftime('%d %B %Y') }}
+            </p>
+            <p class="text-gray-700 leading-relaxed">{{ event.deskripsi_acara }}</p>
+            <div class="mt-6">
+                <a href="{{ url_for('event_page') }}" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    Kembali ke Acara
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

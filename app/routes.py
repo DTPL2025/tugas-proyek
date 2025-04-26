@@ -1,31 +1,17 @@
 # routes.py
 
-from datetime import datetime
-import os
-import secrets
-from flask import url_for, render_template, flash, redirect, request
-from flask_login import current_user, login_required, login_user, logout_user
-from app import app, db, bcrypt
-from app.forms import LoginForm, RatingForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm, InfoPageForm
-from app.models import Rating, User, Product, Cart, Order
-from flasgger import swag_from
-from app.models import OrderDetail
-from app.models import Order, OrderDetail
-from app.forms import OrderStatusUpdateForm
-from sqlalchemy.orm import joinedload
-from werkzeug.utils import secure_filename
+from datetime import datetime, date
 import os, time, secrets
-from app.models import Discussion, Comment
-from app.forms import DiscussionForm, CommentForm
-from datetime import datetime
-from flask import url_for, render_template, flash, redirect, request
+from flask import url_for, render_template, flash, redirect, request, jsonify
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
-from app.forms import LoginForm, RatingForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm, DiscussionForm, CommentForm
-from app.models import Rating, User, Product, Cart, Order, Discussion, Comment, InfoPage
+from app.forms import LoginForm, RatingForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm, InfoPageForm, DiscussionForm, CommentForm
+from app.models import Rating, User, Product, Cart, Order, Discussion, Comment, InfoPage, OrderDetail, Event
 from flasgger import swag_from
 from sqlalchemy.orm import joinedload
-import os, secrets
+from sqlalchemy import func, distinct
+from werkzeug.utils import secure_filename
+
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
     _, f_ext = os.path.splitext(form_image.filename)
@@ -41,7 +27,15 @@ def inject_user():
 @app.route('/')
 @swag_from('docs/home.yml')
 def home():
-    return render_template('home.jinja')
+    jumlah_penjual = User.query.filter_by(role='Penjual').count()
+    jumlah_pembeli = User.query.filter_by(role='Pembeli').count()
+    total_produk = Product.query.count()
+
+    return render_template('home.jinja',
+                       jumlah_penjual=jumlah_penjual,
+                       jumlah_pembeli=jumlah_pembeli,
+                       total_produk=total_produk)
+
 
 @app.route('/login', methods=['GET', 'POST'])
 @swag_from('docs/login.yml')
@@ -421,6 +415,7 @@ def view_order_status():
 
     orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('view_order_status.jinja', orders=orders)
+
 @app.route('/produk/<int:product_id>', methods=['GET', 'POST'])
 @swag_from('docs/detail_product.yml')
 def detail_product(product_id):
@@ -521,196 +516,7 @@ def detail_product(product_id):
         info_pages=info_pages,
         standalone_comments=standalone_comments  # Mengirim komentar yang tidak terkait dengan diskusi
     )
-
-    # Periksa apakah produk ada di database
-    product = Product.query.get(product_id)
-    if not product:
-        flash('Produk tidak ditemukan!', 'danger')
-        return redirect(url_for('katalog_product'))
-
-    form = RatingForm()
-
-    has_ordered = False
-    previous_rating = None
-
-    if current_user.is_authenticated:
-        # Memeriksa apakah pengguna sudah membeli produk ini
-        has_ordered = db.session.query(OrderDetail).join(Order).filter(
-            Order.user_id == current_user.id,
-            OrderDetail.product_id == product_id
-        ).count() > 0
-
-        # Memeriksa apakah pengguna sudah memberikan rating
-        previous_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-
-        if form.validate_on_submit() and has_ordered:
-            existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-            if existing_rating:
-                existing_rating.rating = form.rating.data
-                existing_rating.review = form.review.data
-            else:
-                new_rating = Rating(
-                    user_id=current_user.id,
-                    product_id=product_id,
-                    rating=form.rating.data,
-                    review=form.review.data
-                )
-                db.session.add(new_rating)
-            db.session.commit()
-            flash('Your rating has been submitted!', 'success')
-            return redirect(url_for('detail_product', product_id=product_id))
-
-        form.rating.data = previous_rating.rating if previous_rating else None
-        form.review.data = previous_rating.review if previous_rating else None
-
-    # Menghitung rating produk
-    ratings = Rating.query.filter_by(product_id=product_id).all()
-    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
-    rating_count = len(ratings)
-
-    # Menangani posting diskusi
-    discussion_form = DiscussionForm()
-    if discussion_form.validate_on_submit():
-        new_discussion = Discussion(
-            title=discussion_form.title.data,
-            content=discussion_form.content.data,
-            product_id=product_id,
-            user_id=current_user.id
-        )
-        db.session.add(new_discussion)
-        db.session.commit()
-        flash('Diskusi berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Menangani posting komentar
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        new_comment = Comment(
-            content=comment_form.content.data,
-            product_id=product_id,  # Menyambungkan komentar langsung dengan produk
-            user_id=current_user.id
-        )
-        db.session.add(new_comment)
-        db.session.commit()
-        flash('Komentar berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Fetch diskusi dan komentar yang ada
-    discussions = Discussion.query.filter_by(product_id=product_id).all()
-
-    # Mengambil komentar yang terkait dengan produk (tanpa diskusi)
-    standalone_comments = Comment.query.filter_by(product_id=product_id).filter(Comment.discussion_id == None).all()
-
-    # Mengirim data ke template
-    return render_template(
-        'detail_product.jinja',
-        product=product,
-        form=form,
-        ratings=ratings,
-        average_rating=average_rating,
-        rating_count=rating_count,
-        has_ordered=has_ordered,
-        previous_rating=previous_rating,
-        discussion_form=discussion_form,
-        comment_form=comment_form,
-        discussions=discussions,
-        standalone_comments=standalone_comments  # Mengirim komentar yang tidak terkait dengan diskusi
-    )
-
-    # Periksa apakah produk ada di database
-    product = Product.query.get(product_id)
-    if not product:
-        flash('Produk tidak ditemukan!', 'danger')
-        return redirect(url_for('katalog_product'))
-
-    form = RatingForm()
-
-    has_ordered = False
-    previous_rating = None
-
-    if current_user.is_authenticated:
-        # Memeriksa apakah pengguna sudah membeli produk ini
-        has_ordered = db.session.query(OrderDetail).join(Order).filter(
-            Order.user_id == current_user.id,
-            OrderDetail.product_id == product_id
-        ).count() > 0
-
-        # Memeriksa apakah pengguna sudah memberikan rating
-        previous_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-
-        if form.validate_on_submit() and has_ordered:
-            existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-            if existing_rating:
-                existing_rating.rating = form.rating.data
-                existing_rating.review = form.review.data
-            else:
-                new_rating = Rating(
-                    user_id=current_user.id,
-                    product_id=product_id,
-                    rating=form.rating.data,
-                    review=form.review.data
-                )
-                db.session.add(new_rating)
-            db.session.commit()
-            flash('Your rating has been submitted!', 'success')
-            return redirect(url_for('detail_product', product_id=product_id))
-
-        form.rating.data = previous_rating.rating if previous_rating else None
-        form.review.data = previous_rating.review if previous_rating else None
-
-    # Menghitung rating produk
-    ratings = Rating.query.filter_by(product_id=product_id).all()
-    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
-    rating_count = len(ratings)
-
-    # Menangani posting diskusi
-    discussion_form = DiscussionForm()
-    if discussion_form.validate_on_submit():
-        new_discussion = Discussion(
-            title=discussion_form.title.data,
-            content=discussion_form.content.data,
-            product_id=product_id,
-            user_id=current_user.id
-        )
-        db.session.add(new_discussion)
-        db.session.commit()
-        flash('Diskusi berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Menangani posting komentar
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        new_comment = Comment(
-            content=comment_form.content.data,
-            product_id=product_id,  # Menyambungkan komentar langsung dengan produk
-            user_id=current_user.id
-        )
-        db.session.add(new_comment)
-        db.session.commit()
-        flash('Komentar berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Fetch diskusi dan komentar yang ada
-    discussions = Discussion.query.filter_by(product_id=product_id).all()
-
-    # Mengambil komentar yang terkait dengan produk (tanpa diskusi)
-    standalone_comments = Comment.query.filter_by(product_id=product_id, discussion_id=None).all()
-
-    # Mengirim data ke template
-    return render_template(
-        'detail_product.jinja',
-        product=product,
-        form=form,
-        ratings=ratings,
-        average_rating=average_rating,
-        rating_count=rating_count,
-        has_ordered=has_ordered,
-        previous_rating=previous_rating,
-        discussion_form=discussion_form,
-        comment_form=comment_form,
-        discussions=discussions,
-        standalone_comments=standalone_comments  # Mengirim komentar yang tidak terkait dengan diskusi
-    )
+  
 # Route for deleting a discussion
 @app.route('/discussion/delete/<int:discussion_id>', methods=['POST'])
 @login_required
@@ -827,3 +633,158 @@ def delete_info_page(info_id):
     db.session.commit()
     flash('Informasi berhasil dihapus.', 'success')
     return redirect(url_for('detail_product', product_id=product_id))
+
+@app.route('/event/load_all')
+def load_all_events():
+    today = date.today()
+
+    try:
+        # Event sedang berlangsung
+        current_events = Event.query.filter(
+            Event.tanggal_mulai <= today,
+            Event.tanggal_berakhir >= today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        # Event yang akan datang
+        upcoming_events = Event.query.filter(
+            Event.tanggal_mulai > today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        def serialize(event):
+            return {
+                'id': event.id,
+                'judul_acara': event.judul_acara,
+                'deskripsi_acara': event.deskripsi_acara,
+                'gambar_acara': event.gambar_acara,
+                'tanggal_mulai': event.tanggal_mulai.strftime('%Y-%m-%d'),
+                'tanggal_berakhir': event.tanggal_berakhir.strftime('%Y-%m-%d'),
+            }
+
+        return jsonify({
+            'bulan_ini': [serialize(e) for e in current_events],
+            'tahun_ini': [serialize(e) for e in upcoming_events]
+        })
+    except Exception as e:
+        return jsonify({'error': 'Gagal memuat data'}), 500
+
+
+@app.route('/event')
+def event_page():
+    try:
+        today = date.today()
+
+        # Event yang sedang berlangsung
+        current_events = Event.query.filter(
+            Event.tanggal_mulai <= today,
+            Event.tanggal_berakhir >= today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        # Event yang akan datang
+        upcoming_events = Event.query.filter(
+            Event.tanggal_mulai > today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        return render_template("event.jinja", bulan_ini=current_events, tahun_ini=upcoming_events)
+    except Exception as e:
+        return render_template("event.jinja", error="Gagal memuat data event.")
+
+
+@app.route('/event/create', methods=['GET', 'POST'])
+def create_event():
+    if request.method == 'POST':
+        judul = request.form['judul_acara']
+        deskripsi = request.form['deskripsi_acara']
+        tanggal_mulai = datetime.strptime(request.form['tanggal_mulai'], "%Y-%m-%d").date()
+        tanggal_berakhir = datetime.strptime(request.form['tanggal_berakhir'], "%Y-%m-%d").date()
+        file = request.files['gambar_acara']
+
+        # Simpan file
+        filename = secure_filename(file.filename)
+        upload_path = os.path.join(app.root_path, 'static', 'event_images')
+        os.makedirs(upload_path, exist_ok=True)
+        file_path = os.path.join(upload_path, filename)
+        file.save(file_path)
+
+        # Simpan ke database
+        event = Event(
+            judul_acara=judul,
+            deskripsi_acara=deskripsi,
+            tanggal_mulai=tanggal_mulai,
+            tanggal_berakhir=tanggal_berakhir,
+            gambar_acara=filename
+        )
+        db.session.add(event)
+        db.session.commit()
+        flash('Event berhasil ditambahkan!', 'success')
+        return redirect(url_for('event_page'))
+
+    return render_template('create_event.jinja')
+
+@app.route('/event/<int:event_id>')
+def event_detail(event_id):
+    event = Event.query.get_or_404(event_id)
+    return render_template('event_detail.jinja', event=event)
+
+@app.route('/dashboard/analytics')
+@login_required
+def analytic_pembeli():
+    if current_user.role != 'Penjual':
+        flash('Halaman ini hanya dapat diakses oleh Penjual.', 'danger')
+        return redirect(url_for('home'))
+
+    produk_penjual = Product.query.filter_by(seller_id=current_user.id).all()
+    data = []
+    total_omset = 0
+    total_penjualan = 0
+
+    for produk in produk_penjual:
+        jumlah_pembeli = db.session.query(
+            func.count(distinct(Order.user_id))
+        ).join(OrderDetail, Order.id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.product_id == produk.id,
+            Order.status == 'Selesai'
+        ).scalar()
+
+        jumlah_terjual = db.session.query(
+            func.coalesce(func.sum(OrderDetail.quantity), 0)
+        ).join(Order, Order.id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.product_id == produk.id,
+            Order.status == 'Selesai'
+        ).scalar()
+
+        omset = db.session.query(
+            func.coalesce(func.sum(OrderDetail.quantity * OrderDetail.price), 0)
+        ).join(Order, Order.id == OrderDetail.order_id
+        ).filter(
+            OrderDetail.product_id == produk.id,
+            Order.status == 'Selesai'
+        ).scalar()
+
+        average_rating = db.session.query(func.avg(Rating.rating)).filter(Rating.product_id == produk.id).scalar()
+        rating_count = db.session.query(func.count(Rating.rating)).filter(Rating.product_id == produk.id).scalar()
+
+        total_omset += omset or 0
+        total_penjualan += jumlah_terjual or 0
+
+        data.append({
+            'id': produk.id,
+            'name': produk.name,
+            'image_file': produk.image_file,
+            'description': produk.description,
+            'price': produk.price,
+            'stock': produk.stock,
+            'jumlah_pembeli': jumlah_pembeli or 0,
+            'jumlah_terjual': jumlah_terjual or 0,
+            'omset': omset or 0,
+            'average_rating': round(average_rating or 0, 1),
+            'rating_count': rating_count or 0
+        })
+
+    return render_template(
+        'dashboard_analytic.jinja',
+        products=data,
+        total_omset=total_omset,
+        total_penjualan=total_penjualan
+    )
