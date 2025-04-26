@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Discussion Comments</title>
+    <link rel="stylesheet" href="/static/css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Product Discussion</h1>
+    </header>
+    <main>
+        <section>
+            <h2>Comments</h2>
+            <ul>
+                {% for comment in comments %}
+                    <li>
+                        <p><strong>{{ comment.user_name }}</strong>:</p>
+                        <p>{{ comment.text }}</p>
+                        <p><small>Posted on {{ comment.timestamp }}</small></p>
+                    </li>
+                {% else %}
+                    <li>No comments yet. Be the first to comment!</li>
+                {% endfor %}
+            </ul>
+        </section>
+        <section>
+            <h2>Add a Comment</h2>
+            <form action="{{ url_for('add_comment') }}" method="post">
+                <label for="user_name">Name:</label>
+                <input type="text" id="user_name" name="user_name" required>
+                
+                <label for="text">Comment:</label>
+                <textarea id="text" name="text" rows="4" required></textarea>
+                
+                <button type="submit">Submit</button>
+            </form>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Your Company</p>
+    </footer>
+</body>
+</html>

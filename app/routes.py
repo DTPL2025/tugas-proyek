@@ -297,3 +297,28 @@ def search_katalog():
 
         discussions = product.get_discussions()
         return render_template('view_prod_disc_post.jinja', product=product, discussions=discussions)
+    
+    @app.route('/produk/<int:product_id>/diskusi/<int:discussion_id>/komentar', methods=['GET', 'POST'])
+    @login_required
+    @swag_from('docs/view_prod_disc_comment.yml')
+    def view_prod_disc_comment(product_id, discussion_id):
+        product = Product.query.get_or_404(product_id)
+        discussion = product.get_discussion_by_id(discussion_id)
+
+        if not discussion:
+            flash('Diskusi tidak ditemukan.', 'danger')
+            return redirect(url_for('view_prod_disc_post', product_id=product_id))
+
+        if request.method == 'POST':
+            content = request.form.get('content', '').strip()
+            if not content:
+                flash('Isi komentar tidak boleh kosong.', 'warning')
+            else:
+                comment = discussion.add_comment(content=content, user_id=current_user.id)
+                db.session.add(comment)
+                db.session.commit()
+                flash('Komentar berhasil ditambahkan.', 'success')
+            return redirect(url_for('view_prod_disc_comment', product_id=product_id, discussion_id=discussion_id))
+
+        comments = discussion.get_comments()
+        return render_template('view_prod_disc_comment.jinja', product=product, discussion=discussion, comments=comments)
