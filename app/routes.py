@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
 import secrets
-from flask import url_for, render_template, flash, redirect, request
+from flask import url_for, render_template, flash, redirect, request, jsonify
 from flask_login import current_user, login_required, login_user, logout_user
 from app import app, db, bcrypt
 from app.forms import LoginForm, RatingForm, RegisterForm, ProductForm, CartUpdateForm, OrderStatusUpdateForm
@@ -14,6 +14,8 @@ from sqlalchemy.orm import joinedload
 from sqlalchemy import func, distinct
 from werkzeug.utils import secure_filename
 import os, time, secrets
+from datetime import date
+from app.models import db, Event
 
 def save_image(form_image):
     random_hex = secrets.token_hex(8)
@@ -465,6 +467,97 @@ def view_order_status():
 
     orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template('view_order_status.jinja', orders=orders)
+
+@app.route('/event/load_all')
+def load_all_events():
+    today = date.today()
+
+    try:
+        # Event sedang berlangsung
+        current_events = Event.query.filter(
+            Event.tanggal_mulai <= today,
+            Event.tanggal_berakhir >= today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        # Event yang akan datang
+        upcoming_events = Event.query.filter(
+            Event.tanggal_mulai > today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        def serialize(event):
+            return {
+                'id': event.id,
+                'judul_acara': event.judul_acara,
+                'deskripsi_acara': event.deskripsi_acara,
+                'gambar_acara': event.gambar_acara,
+                'tanggal_mulai': event.tanggal_mulai.strftime('%Y-%m-%d'),
+                'tanggal_berakhir': event.tanggal_berakhir.strftime('%Y-%m-%d'),
+            }
+
+        return jsonify({
+            'bulan_ini': [serialize(e) for e in current_events],
+            'tahun_ini': [serialize(e) for e in upcoming_events]
+        })
+    except Exception as e:
+        return jsonify({'error': 'Gagal memuat data'}), 500
+
+
+@app.route('/event')
+def event_page():
+    try:
+        today = date.today()
+
+        # Event yang sedang berlangsung
+        current_events = Event.query.filter(
+            Event.tanggal_mulai <= today,
+            Event.tanggal_berakhir >= today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        # Event yang akan datang
+        upcoming_events = Event.query.filter(
+            Event.tanggal_mulai > today
+        ).order_by(Event.tanggal_mulai.asc()).all()
+
+        return render_template("event.jinja", bulan_ini=current_events, tahun_ini=upcoming_events)
+    except Exception as e:
+        return render_template("event.jinja", error="Gagal memuat data event.")
+
+
+@app.route('/event/create', methods=['GET', 'POST'])
+def create_event():
+    if request.method == 'POST':
+        judul = request.form['judul_acara']
+        deskripsi = request.form['deskripsi_acara']
+        tanggal_mulai = datetime.strptime(request.form['tanggal_mulai'], "%Y-%m-%d").date()
+        tanggal_berakhir = datetime.strptime(request.form['tanggal_berakhir'], "%Y-%m-%d").date()
+        file = request.files['gambar_acara']
+
+        # Simpan file
+        filename = secure_filename(file.filename)
+        upload_path = os.path.join(app.root_path, 'static', 'event_images')
+        os.makedirs(upload_path, exist_ok=True)
+        file_path = os.path.join(upload_path, filename)
+        file.save(file_path)
+
+        # Simpan ke database
+        event = Event(
+            judul_acara=judul,
+            deskripsi_acara=deskripsi,
+            tanggal_mulai=tanggal_mulai,
+            tanggal_berakhir=tanggal_berakhir,
+            gambar_acara=filename
+        )
+        db.session.add(event)
+        db.session.commit()
+        flash('Event berhasil ditambahkan!', 'success')
+        return redirect(url_for('event_page'))
+
+    return render_template('create_event.jinja')
+
+@app.route('/event/<int:event_id>')
+def event_detail(event_id):
+    event = Event.query.get_or_404(event_id)
+    return render_template('event_detail.jinja', event=event)
 
 @app.route('/dashboard/analytics')
 @login_required
