@@ -421,7 +421,7 @@ def view_order_status():
 def detail_product(product_id):
     product = Product.query.get_or_404(product_id)
 
-    # Form-form
+    # Forms
     form = RatingForm()
     discussion_form = DiscussionForm()
     comment_form = CommentForm()
@@ -430,36 +430,95 @@ def detail_product(product_id):
     previous_rating = None
 
     if current_user.is_authenticated:
-        # Cek apakah user pernah beli produk ini
         has_ordered = db.session.query(OrderDetail).join(Order).filter(
             Order.user_id == current_user.id,
             OrderDetail.product_id == product_id
         ).count() > 0
 
-        # Cek apakah user sudah pernah kasih rating
         previous_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
 
-    # Tangani form rating
-    if form.validate_on_submit() and 'rating' in request.form:
-        if current_user.is_authenticated and has_ordered:
-            existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-            if existing_rating:
-                existing_rating.rating = form.rating.data
-                existing_rating.review = form.review.data
-            else:
-                new_rating = Rating(
-                    user_id=current_user.id,
+    # 🔥 Handle Form POST
+    if request.method == 'POST':
+        if 'rating' in request.form:
+            # Form Rating
+            if form.validate_on_submit() and has_ordered:
+                existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+                if existing_rating:
+                    existing_rating.rating = form.rating.data
+                    existing_rating.review = form.review.data
+                else:
+                    new_rating = Rating(
+                        user_id=current_user.id,
+                        product_id=product_id,
+                        rating=form.rating.data,
+                        review=form.review.data
+                    )
+                    db.session.add(new_rating)
+                db.session.commit()
+                flash('Ulasan Anda telah dikirim!', 'success')
+                return redirect(url_for('detail_product', product_id=product_id))
+
+        elif 'title' in request.form:
+            # Form Diskusi
+            if discussion_form.validate_on_submit():
+                new_discussion = Discussion(
+                    title=discussion_form.title.data,
+                    content=discussion_form.content.data,
                     product_id=product_id,
-                    rating=form.rating.data,
-                    review=form.review.data
+                    user_id=current_user.id
                 )
-                db.session.add(new_rating)
-            db.session.commit()
-            flash('Ulasan Anda telah dikirim!', 'success')
-            return redirect(url_for('detail_product', product_id=product_id))
-        else:
-            flash('Anda harus membeli produk ini sebelum memberi ulasan.', 'danger')
-            return redirect(url_for('detail_product', product_id=product_id))
+                db.session.add(new_discussion)
+                db.session.commit()
+                flash('Diskusi berhasil diposting!', 'success')
+                return redirect(url_for('detail_product', product_id=product_id))
+
+        elif 'discussion_id' in request.form:
+            # Form Komentar
+            if comment_form.validate_on_submit():
+                discussion_id = request.form.get('discussion_id')
+                new_comment = Comment(
+                    content=comment_form.content.data,
+                    discussion_id=discussion_id,
+                    user_id=current_user.id
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+                flash('Komentar berhasil diposting!', 'success')
+                return redirect(url_for('detail_product', product_id=product_id))
+
+    # 🔥 Handle GET (load halaman)
+    filter_diskusi = request.args.get('filter_diskusi', 'terbaru')
+
+    if filter_diskusi == 'populer':
+        discussions = db.session.query(Discussion).filter_by(product_id=product_id)\
+            .outerjoin(Comment).group_by(Discussion.id)\
+            .order_by(db.func.count(Comment.id).desc(), Discussion.created_at.desc()).all()
+    else:
+        discussions = Discussion.query.filter_by(product_id=product_id)\
+            .order_by(Discussion.created_at.desc()).all()
+
+    ratings = Rating.query.filter_by(product_id=product_id).all()
+    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
+    rating_count = len(ratings)
+    info_pages = InfoPage.query.filter_by(product_id=product_id).all()
+
+    return render_template(
+        'detail_product.jinja',
+        product=product,
+        form=form,
+        ratings=ratings,
+        average_rating=average_rating,
+        rating_count=rating_count,
+        has_ordered=has_ordered,
+        previous_rating=previous_rating,
+        discussion_form=discussion_form,
+        comment_form=comment_form,
+        discussions=discussions,
+        info_pages=info_pages,
+        filter_diskusi=filter_diskusi
+    )
+
+
 
     # Tangani form diskusi
     if discussion_form.validate_on_submit() and 'title' in request.form:
@@ -521,28 +580,20 @@ def detail_product(product_id):
 @login_required
 def delete_discussion(discussion_id):
     discussion = Discussion.query.get_or_404(discussion_id)
-    if discussion.user_id == current_user.id:  # Pastikan hanya pemilik diskusi yang bisa menghapus
-        db.session.delete(discussion)
-        db.session.commit()
-        flash('Diskusi berhasil dihapus!', 'success')
-    else:
-        flash('Anda tidak memiliki izin untuk menghapus diskusi ini.', 'danger')
-    return redirect(url_for('detail_product', product_id=discussion.product_id))
-    discussion = Discussion.query.get_or_404(discussion_id)
 
-    # Check if the current user is the owner of the discussion
     if discussion.user_id != current_user.id:
         flash('Anda tidak memiliki izin untuk menghapus diskusi ini.', 'danger')
         return redirect(url_for('detail_product', product_id=discussion.product_id))
 
-    # Optionally delete all comments manually if you want them removed
+    # Hapus semua komentar di diskusi ini
     Comment.query.filter_by(discussion_id=discussion.id).delete()
 
-    # Delete the discussion
+    # Hapus diskusi
     db.session.delete(discussion)
     db.session.commit()
-    flash('Diskusi berhasil dihapus!', 'success')
+    flash('Diskusi dan semua komentarnya berhasil dihapus.', 'success')
     return redirect(url_for('detail_product', product_id=discussion.product_id))
+
 # Route for editing a discussion
 @app.route('/discussion/edit/<int:discussion_id>', methods=['GET', 'POST'])
 @login_required
@@ -567,9 +618,17 @@ def edit_discussion(discussion_id):
 @login_required
 def delete_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
-    product_id = comment.product_id  # Pastikan atribut ini ada
+
+    # Pastikan hanya pemilik komentar yang bisa menghapus
+    if comment.user_id != current_user.id:
+        flash('Anda tidak memiliki izin untuk menghapus komentar ini.', 'danger')
+        return redirect(url_for('home'))
+
+    product_id = comment.discussion.product.id  # Ambil id produk lewat diskusi
+
     db.session.delete(comment)
     db.session.commit()
+    flash('Komentar berhasil dihapus.', 'success')
     return redirect(url_for('detail_product', product_id=product_id))
 
 @app.route('/info_page')

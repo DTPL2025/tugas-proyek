@@ -22,10 +22,10 @@
     <!-- Detail Produk -->
     <div class="space-y-4 mb-6">
         <p><span class="font-semibold">Deskripsi:</span> {{ product.description or 'Tidak ada deskripsi.' }}</p>
-        <p><span class="font-semibold">Harga:</span> Rp. {{ "{:,}".format(product.price).replace(',', '.').replace('.', ',') }}</p>
+        <p><span class="font-semibold">Harga:</span> Rp. {{ "{:,}".format(product.price).replace(',', '.') }}</p>
         <p><span class="font-semibold">Stok:</span> {{ product.stock }} Unit</p>
         <p><span class="font-semibold">Berat:</span> {{ product.weight }} gram</p>
-        <p><span class="font-semibold">Penjual:</span> {{ product.seller.name or 'Tidak diketahui' }}</p>
+        <p><span class="font-semibold">Penjual:</span> {{ product.seller.name if product.seller.name else product.seller.username }}</p>
     </div>
 
     <!-- Tombol Tambah ke Keranjang -->
@@ -55,20 +55,35 @@
         </form>
     </div>
     {% else %}
-    <p class="text-gray-500 italic mt-6">Hanya pembeli yang dapat memberikan ulasan.</p>
+    <p class="text-gray-500 italic mt-6">Anda hanya bisa menilai produk ini jika anda pernah membelinya.</p>
     {% endif %}
 
     <!-- Ulasan Pembeli -->
     <div class="mt-10">
         <h2 class="text-xl font-bold mb-4">Ulasan Pembeli</h2>
+
+        <div class="flex items-center mb-4">
+            <span class="text-2xl font-bold">⭐ {{ average_rating|round(1) }}</span>
+            <span class="text-md ml-2">/ 5.0</span>
+        </div>
+
+        <div class="space-y-1 text-gray-700 mb-6">
+            {% for star in range(1, 6) %}
+                <div class="flex justify-between w-48">
+                    <span>{{ '⭐' * star }}</span>
+                    <span>{{ ratings|selectattr('rating', 'eq', star)|list|length }} ulasan</span>
+                </div>
+            {% endfor %}
+        </div>
+
         {% for rating in ratings|reverse %}
-            <div class="border-b py-4">
-                <p class="font-semibold">{{ rating.user.username }} - {{ '⭐' * rating.rating }}</p>
-                <p>{{ rating.review }}</p>
-                <p class="text-sm text-gray-500">{{ rating.created_at.strftime('%Y-%m-%d') }}</p>
+            <div class="border-y border-gray-300 py-2">
+                <p class="font-semibold">{{ rating.user.name if rating.user.name else rating.user.username }} - {{ '⭐' * rating.rating }}</p>
+                <p class="text-gray-600">{{ rating.review }}</p>
+                <p class="text-sm text-gray-500 italic">Direview pada {{ rating.created_at.strftime('%Y-%m-%d') }}</p>
             </div>
         {% else %}
-            <p class="text-gray-400">Belum ada ulasan untuk produk ini.</p>
+            <p class="text-gray-500 italic">Belum ada review produk.</p>
         {% endfor %}
     </div>
 
@@ -76,7 +91,9 @@
     <div class="mt-10">
         <h2 class="text-2xl font-bold mb-4">Diskusi Produk</h2>
 
-        <!-- Form Buat Diskusi -->
+        <!-- Filter Diskusi -->
+        
+
         {% if current_user.is_authenticated %}
         <form method="POST" action="{{ url_for('detail_product', product_id=product.id) }}" class="mb-8">
             {{ discussion_form.hidden_tag() }}
@@ -91,40 +108,68 @@
             <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Buat Diskusi</button>
         </form>
         {% endif %}
-
-        <!-- Menampilkan Diskusi dan Komentar -->
+        <form method="GET" action="{{ url_for('detail_product', product_id=product.id) }}" class="mb-6">
+            <label for="filter_diskusi" class="text-sm font-semibold mr-2">Urutkan Diskusi:</label>
+            <select name="filter_diskusi" id="filter_diskusi" onchange="this.form.submit()" class="p-2 border rounded">
+                <option value="terbaru" {% if filter_diskusi == 'terbaru' %}selected{% endif %}>Terbaru</option>
+                <option value="populer" {% if filter_diskusi == 'populer' %}selected{% endif %}>Terpopuler</option>
+            </select>
+        </form>
         {% for discussion in discussions %}
             <div class="bg-gray-100 p-4 mb-6 rounded-lg shadow-sm">
                 <h3 class="text-xl font-semibold">{{ discussion.title }}</h3>
                 <p>{{ discussion.content }}</p>
-                <p class="text-sm text-gray-500 mt-2">Oleh {{ discussion.user.username }} - {{ discussion.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p class="text-sm text-gray-500 mt-2">Oleh {{ discussion.user.name if discussion.user.name else discussion.user.username }} - {{ discussion.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
 
-                <!-- Komentar -->
-                <div class="ml-6 mt-4">
-                    <h4 class="font-semibold text-md mb-2">Komentar:</h4>
+                {% if current_user.is_authenticated and current_user.id == discussion.user_id %}
+                <form action="{{ url_for('delete_discussion', discussion_id=discussion.id) }}" method="POST" class="mt-2">
+                    <button type="submit" class="text-red-500 text-sm hover:underline">Hapus Diskusi</button>
+                </form>
+                {% endif %}
+
+                <div class="mt-4">
+                    <button onclick="toggleComments({{ discussion.id }})" class="text-blue-500 hover:underline text-sm">
+                        Lihat Komentar ({{ discussion.comments|length }})
+                    </button>
+                </div>
+
+                <div id="comments-{{ discussion.id }}" class="hidden ml-6 mt-4">
                     {% for comment in discussion.comments %}
                         <div class="bg-white p-3 rounded shadow-sm mt-2">
                             <p>{{ comment.content }}</p>
-                            <p class="text-xs text-gray-400">Oleh {{ comment.user.username }} - {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p class="text-xs text-gray-400">Oleh {{ comment.user.name if comment.user.name else comment.user.username }} - {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+
+                            {% if current_user.is_authenticated and current_user.id == comment.user_id %}
+                            <form action="{{ url_for('delete_comment', comment_id=comment.id) }}" method="POST" class="inline ml-2">
+                                <button type="submit" class="text-red-500 text-xs hover:underline">Hapus</button>
+                            </form>
+                            {% endif %}
                         </div>
                     {% else %}
-                        <p class="text-gray-400">Belum ada komentar.</p>
+                        <p class="text-gray-400 italic">Belum ada komentar.</p>
                     {% endfor %}
-                </div>
 
-                <!-- Form Tambah Komentar -->
-                {% if current_user.is_authenticated %}
-                <form action="{{ url_for('detail_product', product_id=product.id) }}" method="POST" class="ml-6 mt-4">
-                    {{ comment_form.hidden_tag() }}
-                    <input type="hidden" name="discussion_id" value="{{ discussion.id }}">
-                    <textarea name="content" class="w-full p-2 border rounded" placeholder="Tulis komentar Anda..." required></textarea>
-                    <button type="submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Kirim Komentar</button>
-                </form>
-                {% endif %}
+                    {% if current_user.is_authenticated %}
+                    <form action="{{ url_for('detail_product', product_id=product.id) }}" method="POST" class="mt-4">
+                        {{ comment_form.hidden_tag() }}
+                        <input type="hidden" name="discussion_id" value="{{ discussion.id }}">
+                        <textarea name="content" class="w-full p-2 border rounded" placeholder="Tulis komentar Anda..." required></textarea>
+                        <button type="submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Kirim Komentar</button>
+                    </form>
+                    {% endif %}
+                </div>
             </div>
         {% endfor %}
     </div>
 
 </div>
+
+<script>
+function toggleComments(discussionId) {
+    var commentSection = document.getElementById('comments-' + discussionId);
+    commentSection.classList.toggle('hidden');
+}
+</script>
+
 </body>
 {% endblock %}
