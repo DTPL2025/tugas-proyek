@@ -25,8 +25,8 @@ class User(db.Model, UserMixin):
 
     products = db.relationship('Product', backref='seller', lazy=True)
     orders = db.relationship('Order', backref='user', lazy=True)
-    discussions = db.relationship('Discussion', backref='user_discussions', lazy=True)
-    comments = db.relationship('Comment', backref='user_comments', lazy=True)
+    discussions = db.relationship('Discussion', back_populates='user', cascade="all, delete-orphan")
+    comments = db.relationship('Comment', back_populates='user', cascade="all, delete-orphan")
 
 # Model Product
 class Product(db.Model):
@@ -40,11 +40,9 @@ class Product(db.Model):
     seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     order_details = db.relationship('OrderDetail', backref='product', lazy=True)
 
-    # Relasi dengan Comment
-    comments = db.relationship('Comment', back_populates='product', lazy=True)
-
     # Relasi dengan Discussion
-    discussions = db.relationship('Discussion', backref='product_discussions', lazy=True)
+    discussions = db.relationship('Discussion', back_populates='product', cascade="all, delete-orphan")
+
 
 # Model Cart
 class Cart(db.Model):
@@ -79,24 +77,24 @@ class Rating(db.Model):
 # Model Discussion
 class Discussion(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(255), nullable=False)
+    title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-    product = db.relationship('Product', backref='discussions_product', lazy=True)
-    user = db.relationship('User', backref='discussions_user', lazy=True)
-
+    product = db.relationship('Product', back_populates='discussions')
+    user = db.relationship('User', back_populates='discussions')
+    comments = db.relationship('Comment', back_populates='discussion', cascade="all, delete-orphan")
 # Model Comment
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    content = db.Column(db.String(255))
-    product_id = db.Column(db.Integer, db.ForeignKey('product.id'))
-    product = db.relationship('Product', back_populates='comments')
+    content = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    discussion_id = db.Column(db.Integer, db.ForeignKey('discussion.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))  # ForeignKey yang hilang
-    user = db.relationship('User', backref='user_comments', lazy=True)
+    discussion = db.relationship('Discussion', back_populates='comments')
+    user = db.relationship('User', back_populates='comments')
 
 # Model InfoPage (FAQ dan Panduan Pembelian)
 class InfoPage(db.Model):

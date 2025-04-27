@@ -482,15 +482,17 @@ def detail_product(product_id):
     # Menangani posting komentar
     comment_form = CommentForm()
     if comment_form.validate_on_submit():
-        new_comment = Comment(
-            content=comment_form.content.data,
-            product_id=product_id,  # Menyambungkan komentar langsung dengan produk
-            user_id=current_user.id
-        )
-        db.session.add(new_comment)
-        db.session.commit()
-        flash('Komentar berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
+        discussion_id = request.form.get('discussion_id')  # Ambil id diskusi dari form
+        if discussion_id:
+            new_comment = Comment(
+                content=comment_form.content.data,
+                discussion_id=discussion_id,
+                user_id=current_user.id
+            )
+            db.session.add(new_comment)
+            db.session.commit()
+            flash('Komentar berhasil diposting!', 'success')
+            return redirect(url_for('detail_product', product_id=product_id))
 
     # Fetch diskusi dan komentar yang ada
     discussions = Discussion.query.filter_by(product_id=product_id).all()
