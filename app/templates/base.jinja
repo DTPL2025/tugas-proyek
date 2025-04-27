@@ -30,7 +30,12 @@
 
             <a href="{{ url_for('katalog_product') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Katalog</a>
             <a href="/event" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">Acara</a>
-            
+            <a href="{{ url_for('view_informasi') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">
+                Informasi
+            </a>
+
+
+
             {% if current_user.is_authenticated %}
                 <!-- Menampilkan Cart jika user sudah login -->
                 <a href="{{ url_for('view_cart') }}" class="text-[#F6CA89] font-medium hover:text-[#C4A16D] duration-200 ease-out">

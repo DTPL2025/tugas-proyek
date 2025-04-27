@@ -895,3 +895,20 @@ def analytic_pembeli():
         total_omset=total_omset,
         total_penjualan=total_penjualan
     )
+
+@app.route('/informasi')
+def view_informasi():
+    category = request.args.get('category')
+    query = request.args.get('q')
+
+    info_query = InfoPage.query
+
+    if category:
+        info_query = info_query.filter_by(category=category)
+
+    if query:
+        info_query = info_query.filter(InfoPage.content.ilike(f'%{query}%'))
+
+    info_pages = info_query.all()
+
+    return render_template('view_informasi.jinja', info_pages=info_pages, query=query or '', category=category)

@@ -1,0 +1,118 @@
+{% extends "base.jinja" %}
+
+{% block title %}Pusat Informasi{% endblock %}
+
+{% block body %}
+<div class="container mx-auto my-8 px-4">
+    <div class="bg-white p-8 rounded-lg shadow-lg">
+
+        <h1 class="text-3xl font-bold mb-6 text-center text-[#41453C]">Pusat Informasi</h1>
+
+        <!-- Filter Kategori -->
+        <div class="flex justify-between items-center mb-8">
+            <div class="flex gap-2 w-full md:w-auto">
+                <select id="categorySelect" class="border rounded px-3 py-2">
+                    <option value="semua">Semua Kategori</option>
+                    <option value="panduan">Panduan</option>
+                    <option value="faq">FAQ</option>
+                    <option value="kontak">Kontak Dukungan</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Isi Konten -->
+
+        <!-- Panduan -->
+        <div id="panduan" class="mb-12">
+            <h2 class="text-2xl font-semibold text-[#41453C] mb-4 flex items-center">
+                <i class="fas fa-book mr-2"></i> Panduan
+            </h2>
+
+            <div class="space-y-6">
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">📝 Bagaimana Membuat Akun?</p>
+                    <p>Untuk membuat akun, tekan tombol <strong>"Daftar"</strong> yang terletak di bagian atas header website. Isi formulir pendaftaran sesuai dengan data yang diminta.</p>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">🛒 Bagaimana Cara Melihat Produk-Produk yang Dijual?</p>
+                    <p>Untuk melihat produk yang dijual, tekan tombol <strong>"Katalog"</strong> di header web. Daftar katalog produk akan ditampilkan.</p>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">🛍️ Bagaimana Membeli Produk?</p>
+                    <p>Setelah membuka halaman katalog, tambahkan produk ke keranjang dengan menekan tombol <strong>"Tambah ke Keranjang"</strong>. Setelah itu, tekan tombol <strong>"Keranjang"</strong> di header, dan lanjutkan ke proses <strong>pembayaran</strong>.</p>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">📦 Bagaimana Cara Melihat Status Pesanan?</p>
+                    <p>Tekan tombol <strong>"Status Pembelian"</strong> di header web untuk melihat status pesanan Anda.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FAQ -->
+        <div id="faq" class="mb-12">
+            <h2 class="text-2xl font-semibold text-[#41453C] mb-4 flex items-center">
+                <i class="fas fa-question-circle mr-2"></i> FAQ
+            </h2>
+
+            <div class="space-y-6">
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">❓ Apakah Saya Bisa Membatalkan Pesanan?</p>
+                    <p>Pesanan yang sudah dilanjutkan ke pembayaran tidak dapat dibatalkan, kecuali produk yang masih berada di keranjang.</p>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">💳 Pembayarannya Bisa Menggunakan Apa Saja?</p>
+                    <p>Pembayaran dapat dilakukan melalui tiga metode:<br>
+                    • <strong>Cash on Delivery (COD)</strong><br>
+                    • <strong>Transfer Bank</strong><br>
+                    • <strong>QRIS</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kontak Dukungan -->
+        <div id="kontak" class="mb-12">
+            <h2 class="text-2xl font-semibold text-[#41453C] mb-4 flex items-center">
+                <i class="fas fa-headset mr-2"></i> Kontak Dukungan Pelanggan
+            </h2>
+
+            <div class="space-y-6 text-gray-700">
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">📧 Email</p>
+                    <p>dtpl1@e-manja.com</p>
+                </div>
+
+                <div class="p-4 bg-gray-50 rounded shadow">
+                    <p class="font-bold mb-1">📞 Telepon</p>
+                    <p>+62 000-0000-0000</p>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Smooth Scroll Script -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const select = document.getElementById('categorySelect');
+
+    select.addEventListener('change', function () {
+        const value = this.value;
+        if (value === "semua") {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            const section = document.getElementById(value);
+            if (section) {
+                const yOffset = -100; // Untuk offset navbar
+                const y = section.getBoundingClientRect().top + window.pageYOffset + yOffset;
+                window.scrollTo({ top: y, behavior: 'smooth' });
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
