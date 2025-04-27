@@ -116,19 +116,30 @@ def katalog_product():
 @login_required
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
-    # Cek apakah produk sudah ada di cart pengguna
+
+    # 🔥 Cek stok produk sebelum lanjut
+    if product.stock <= 0:
+        flash('Gagal menambahkan ke keranjang: Stok produk habis.', 'danger')
+        return redirect(url_for('katalog_product'))
+
+    # Cari produk di cart
     cart_item = Cart.query.filter_by(user_id=current_user.id, product_id=product.id).first()
     if cart_item:
-        # Jika produk sudah ada di cart, tambahkan kuantitasnya
+        # Kalau sudah ada di cart, cek apakah stok mencukupi untuk nambah 1
+        if product.stock < 1:
+            flash('Tidak dapat menambahkan lebih banyak produk: Stok tidak cukup.', 'danger')
+            return redirect(url_for('katalog_product'))
         cart_item.quantity += 1
     else:
-        # Jika produk belum ada di cart, tambahkan produk baru ke cart
         cart_item = Cart(user_id=current_user.id, product_id=product.id, quantity=1)
         db.session.add(cart_item)
+
+    # 🔥 Kurangi stok produk
+    product.stock -= 1
+
     db.session.commit()
     flash('Produk berhasil ditambahkan ke keranjang!', 'success')
     return redirect(url_for('katalog_product'))
-
 
 @app.route('/cart/update/<int:cart_item_id>', methods=['GET', 'POST'])
 @login_required
@@ -138,7 +149,27 @@ def update_cart(cart_item_id):
     form = CartUpdateForm()
 
     if form.validate_on_submit():
-        cart_item.quantity = form.quantity.data
+        new_quantity = form.quantity.data
+        old_quantity = cart_item.quantity
+        product = Product.query.get(cart_item.product_id)
+
+        if not product:
+            flash('Produk tidak ditemukan.', 'danger')
+            return redirect(url_for('view_cart'))
+
+        quantity_diff = new_quantity - old_quantity
+
+        if quantity_diff > 0:
+            # User mau tambah quantity ➔ cek stok cukup tidak
+            if product.stock < quantity_diff:
+                flash('Stok produk tidak cukup untuk memperbarui jumlah.', 'danger')
+                return redirect(url_for('view_cart'))
+            product.stock -= quantity_diff
+        elif quantity_diff < 0:
+            # User mau mengurangi quantity ➔ kembalikan stok
+            product.stock += abs(quantity_diff)
+
+        cart_item.quantity = new_quantity
         db.session.commit()
         flash('Kuantitas produk telah diperbarui!', 'success')
         return redirect(url_for('view_cart'))
@@ -287,9 +318,15 @@ def delete_cart_item(cart_item_id):
         flash('Anda tidak memiliki izin untuk menghapus item ini.', 'danger')
         return redirect(url_for('view_cart'))
 
+    # 🔥 Tambah stok produk kembali
+    product = Product.query.get(cart_item.product_id)
+    if product:
+        product.stock += cart_item.quantity
+
+    # Hapus item dari cart
     db.session.delete(cart_item)
     db.session.commit()
-    flash('Produk berhasil dihapus dari keranjang.', 'success')
+    flash('Produk berhasil dihapus dari keranjang dan stok dikembalikan.', 'success')
     return redirect(url_for('view_cart'))
 
 def save_payment_proof(uploaded_file):
@@ -370,18 +407,30 @@ def checkout():
 @app.route('/order/manage')
 @login_required
 def manage_orders():
-    if current_user.role != 'Penjual':  # Hanya penjual yang boleh mengakses halaman ini
+    if current_user.role != 'Penjual':  # Hanya penjual yang boleh akses
         flash('Akses ditolak. Halaman ini hanya untuk Penjual.', 'danger')
         return redirect(url_for('home'))
 
     status_filter = request.args.get('status')
 
-    if status_filter:
-        orders = Order.query.options(joinedload(Order.user)).filter_by(status=status_filter).all()
+    # 🔥 Cari semua order_detail produk milik penjual ini
+    order_ids = db.session.query(OrderDetail.order_id).join(Product).filter(
+        Product.seller_id == current_user.id
+    ).distinct().all()
+
+    # order_ids = list of tuple, ambil id nya
+    order_ids = [oid[0] for oid in order_ids]
+
+    if not order_ids:
+        orders = []  # Kalau gak ada, kosongkan
     else:
-        orders = Order.query.options(joinedload(Order.user)).all()
+        query = Order.query.options(joinedload(Order.user)).filter(Order.id.in_(order_ids))
+        if status_filter:
+            query = query.filter(Order.status == status_filter)
+        orders = query.all()
 
     return render_template('manage_orders.jinja', orders=orders)
+
     
 @app.route('/order/update/<int:order_id>', methods=['GET', 'POST'])
 @login_required

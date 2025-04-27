@@ -6,8 +6,9 @@
 <div class="container mx-auto my-8 px-4">
     <h1 class="text-3xl font-bold mb-6 text-center">Manajemen Pesanan</h1>
 
-    <div class="bg-white p-4 rounded-lg shadow-md">
-        <form method="get" action="{{ url_for('manage_orders') }}" class="mb-4 text-right">
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <!-- Filter -->
+        <form method="get" action="{{ url_for('manage_orders') }}" class="mb-6 text-right">
             <label for="status" class="mr-2 font-semibold">Filter Status:</label>
             <select name="status" id="status" onchange="this.form.submit()" class="border rounded px-2 py-1">
                 <option value="">Semua</option>
@@ -18,33 +19,52 @@
             </select>
         </form>
 
+        <!-- Jumlah Pesanan -->
+        <div class="mb-4 text-sm text-gray-600">
+            Total Pesanan: <span class="font-bold">{{ orders|length }}</span>
+        </div>
+
         {% if orders %}
-        <table class="min-w-full table-auto">
-            <thead>
-                <tr>
-                    <th class="px-4 py-2 text-left">ID Pesanan</th>
-                    <th class="px-4 py-2 text-left">Nama Pembeli</th>
-                    <th class="px-4 py-2 text-left">Alamat Pengiriman</th>
-                    <th class="px-4 py-2 text-left">Metode Pembayaran</th>
-                    <th class="px-4 py-2 text-left">Status</th>
-                    <th class="px-4 py-2 text-left">Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for order in orders %}
-                <tr>
-                    <td class="px-4 py-2">{{ order.id }}</td>
-                    <td class="px-4 py-2">{{ order.user.name or order.user.username }}</td>
-                    <td class="px-4 py-2">{{ order.address }}</td>
-                    <td class="px-4 py-2">{{ order.payment_method }}</td>
-                    <td class="px-4 py-2">{{ order.status }}</td>
-                    <td class="px-4 py-2">
-                        <a href="{{ url_for('update_order', order_id=order.id) }}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Perbarui Status</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="overflow-x-auto">
+            <table class="min-w-full table-auto">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="px-4 py-2 text-left">ID Pesanan</th>
+                        <th class="px-4 py-2 text-left">Nama Pembeli</th>
+                        <th class="px-4 py-2 text-left">Alamat Pengiriman</th>
+                        <th class="px-4 py-2 text-left">Metode Pembayaran</th>
+                        <th class="px-4 py-2 text-left">Status</th>
+                        <th class="px-4 py-2 text-left">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                    <tr class="border-b">
+                        <td class="px-4 py-2">{{ order.id }}</td>
+                        <td class="px-4 py-2">{{ order.user.name or order.user.username }}</td>
+                        <td class="px-4 py-2">{{ order.address }}</td>
+                        <td class="px-4 py-2 capitalize">{{ order.payment_method }}</td>
+                        <td class="px-4 py-2">
+                            {% if order.status == 'Menunggu Pembayaran' %}
+                                <span class="text-red-500 font-semibold">{{ order.status }}</span>
+                            {% elif order.status == 'Sedang Diproses' %}
+                                <span class="text-blue-500 font-semibold">{{ order.status }}</span>
+                            {% elif order.status == 'Dikirim' %}
+                                <span class="text-yellow-500 font-semibold">{{ order.status }}</span>
+                            {% elif order.status == 'Selesai' %}
+                                <span class="text-green-500 font-semibold">{{ order.status }}</span>
+                            {% else %}
+                                {{ order.status }}
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2">
+                            <a href="{{ url_for('update_order', order_id=order.id) }}" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Perbarui Status</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
         {% else %}
         <p class="text-center text-gray-600">Tidak ada pesanan yang sesuai dengan filter.</p>
         {% endif %}
