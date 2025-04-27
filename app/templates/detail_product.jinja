@@ -1,81 +1,111 @@
 {% extends "base.jinja" %}
-
 {% block title %}{{ product.name }}{% endblock %}
 
 {% block body %}
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl relative overflow-auto">
+<div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl relative overflow-auto">
 
-        <!-- Tombol Kembali ke List Produk -->
-        <a href="{{ url_for('katalog_product') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Kembali</a>
+    <!-- Tombol Kembali -->
+    <a href="{{ url_for('katalog_product') }}" class="absolute top-4 right-4 bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">Kembali</a>
 
-        <h1 class="text-3xl font-bold mb-6 text-center">{{ product.name }}</h1>
+    <!-- Nama Produk -->
+    <h1 class="text-3xl font-bold mb-6 text-center">{{ product.name }}</h1>
 
-        <!-- Gambar Produk -->
-        <div class="flex justify-center">
-            <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" 
-                 alt="{{ product.name }}" 
-                 class="border rounded w-60 h-60 object-cover shadow-md">
-        </div>
+    <!-- Gambar Produk -->
+    <div class="flex justify-center mb-6">
+        <img src="{{ url_for('static', filename='product_images/' + product.image_file) }}" alt="{{ product.name }}" class="border rounded w-60 h-60 object-cover shadow-md">
+    </div>
 
-        <!-- Rating Produk -->
-        <p class="text-md font-bold text-gray-700 mt-2 mb-6 text-center">⭐ {{ average_rating|round(1) }} ({{ rating_count }} rating)</p>
+    <!-- Rating Produk -->
+    <p class="text-md font-bold text-gray-700 mt-2 mb-6 text-center">⭐ {{ average_rating|round(1) }} ({{ rating_count }} rating)</p>
 
-        <!-- Form Rating -->
+    <!-- Detail Produk -->
+    <div class="space-y-4 mb-6">
+        <p><span class="font-semibold">Deskripsi:</span> {{ product.description or 'Tidak ada deskripsi.' }}</p>
+        <p><span class="font-semibold">Harga:</span> Rp. {{ "{:,}".format(product.price).replace(',', '.').replace('.', ',') }}</p>
+        <p><span class="font-semibold">Stok:</span> {{ product.stock }} Unit</p>
+        <p><span class="font-semibold">Berat:</span> {{ product.weight }} gram</p>
+        <p><span class="font-semibold">Penjual:</span> {{ product.seller.name or 'Tidak diketahui' }}</p>
+    </div>
+
+    <!-- Tombol Tambah ke Keranjang -->
+    <div class="mb-6">
+        <form action="{{ url_for('add_to_cart', product_id=product.id) }}" method="POST">
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full sm:w-auto">Tambah ke Keranjang</button>
+        </form>
+    </div>
+
+    <!-- Form Rating -->
+    {% if has_ordered %}
+    <div class="mt-6">
+        <h2 class="text-lg font-bold">Beri Ulasan Produk Ini</h2>
+        <form method="POST">
+            {{ form.hidden_tag() }}
+            <div class="mb-4">
+                {{ form.rating.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.rating(class="w-full p-2 border rounded") }}
+            </div>
+            <div class="mb-4">
+                {{ form.review.label(class="block text-sm font-medium text-gray-700") }}
+                {{ form.review(class="w-full p-2 border rounded", placeholder="Tulis ulasan Anda...") }}
+            </div>
+            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                {% if previous_rating %} Update Ulasan {% else %} Submit Ulasan {% endif %}
+            </button>
+        </form>
+    </div>
+    {% else %}
+    <p class="text-gray-500 italic mt-6">Hanya pembeli yang dapat memberikan ulasan.</p>
+    {% endif %}
+
+    <!-- Ulasan Pembeli -->
+    <div class="mt-10">
+        <h2 class="text-xl font-bold mb-4">Ulasan Pembeli</h2>
+        {% for rating in ratings|reverse %}
+            <div class="border-b py-4">
+                <p class="font-semibold">{{ rating.user.username }} - {{ '⭐' * rating.rating }}</p>
+                <p>{{ rating.review }}</p>
+                <p class="text-sm text-gray-500">{{ rating.created_at.strftime('%Y-%m-%d') }}</p>
+            </div>
+        {% else %}
+            <p class="text-gray-400">Belum ada ulasan untuk produk ini.</p>
+        {% endfor %}
+    </div>
+
+    <!-- Diskusi Produk -->
+    <div class="mt-10">
+        <h2 class="text-2xl font-bold mb-4">Diskusi Produk</h2>
+
+        <!-- Form Buat Diskusi -->
         {% if current_user.is_authenticated %}
-        <div class="mb-10">
-            <h2 class="text-xl font-semibold mb-4 text-center">Beri Rating Produk Ini</h2>
-            <form method="POST" action="{{ url_for('detail_product', product_id=product.id) }}">
-                {{ form.hidden_tag() }}
-                <div class="mb-4">
-                    {{ form.rating.label(class="block mb-2 text-sm font-medium text-gray-700") }}
-                    {{ form.rating(class="block w-full p-2 border rounded") }}
-                </div>
-                <div class="mb-4">
-                    {{ form.review.label(class="block mb-2 text-sm font-medium text-gray-700") }}
-                    {{ form.review(class="block w-full p-2 border rounded", placeholder="Tulis review Anda...") }}
-                </div>
-                <button type="submit" class="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600">Submit Rating</button>
-            </form>
-        </div>
+        <form method="POST" action="{{ url_for('detail_product', product_id=product.id) }}" class="mb-8">
+            {{ discussion_form.hidden_tag() }}
+            <div class="mb-4">
+                {{ discussion_form.title.label(class="block mb-2 text-sm font-medium text-gray-700") }}
+                {{ discussion_form.title(class="w-full p-2 border rounded", placeholder="Judul Diskusi") }}
+            </div>
+            <div class="mb-4">
+                {{ discussion_form.content.label(class="block mb-2 text-sm font-medium text-gray-700") }}
+                {{ discussion_form.content(class="w-full p-2 border rounded", placeholder="Isi Diskusi") }}
+            </div>
+            <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Buat Diskusi</button>
+        </form>
         {% endif %}
 
-        <!-- Diskusi Produk -->
-        <div class="mt-10">
-            <h2 class="text-2xl font-bold mb-4">Diskusi Produk</h2>
-
-            <!-- Form Buat Diskusi Baru -->
-            {% if current_user.is_authenticated %}
-            <form method="POST" action="{{ url_for('detail_product', product_id=product.id) }}" class="mb-8">
-                {{ discussion_form.hidden_tag() }}
-                <div class="mb-4">
-                    {{ discussion_form.title.label(class="block mb-2 text-sm font-medium text-gray-700") }}
-                    {{ discussion_form.title(class="block w-full p-2 border rounded", placeholder="Judul Diskusi") }}
-                </div>
-                <div class="mb-4">
-                    {{ discussion_form.content.label(class="block mb-2 text-sm font-medium text-gray-700") }}
-                    {{ discussion_form.content(class="block w-full p-2 border rounded", placeholder="Isi Diskusi") }}
-                </div>
-                <button type="submit" class="w-full bg-green-500 text-white py-2 rounded hover:bg-green-600">Post Diskusi</button>
-            </form>
-            {% else %}
-            <p class="text-center text-gray-600 mb-6">Login untuk membuat diskusi.</p>
-            {% endif %}
-
-            <!-- Menampilkan Daftar Diskusi dan Komentar -->
-            {% for discussion in discussions %}
+        <!-- Menampilkan Diskusi dan Komentar -->
+        {% for discussion in discussions %}
             <div class="bg-gray-100 p-4 mb-6 rounded-lg shadow-sm">
                 <h3 class="text-xl font-semibold">{{ discussion.title }}</h3>
-                <p class="text-gray-700">{{ discussion.content }}</p>
-                <p class="text-sm text-gray-500 mt-2">By {{ discussion.user.username }} at {{ discussion.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p>{{ discussion.content }}</p>
+                <p class="text-sm text-gray-500 mt-2">Oleh {{ discussion.user.username }} - {{ discussion.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
 
-                <!-- Komentar pada Diskusi -->
+                <!-- Komentar -->
                 <div class="ml-6 mt-4">
                     <h4 class="font-semibold text-md mb-2">Komentar:</h4>
                     {% for comment in discussion.comments %}
                         <div class="bg-white p-3 rounded shadow-sm mt-2">
                             <p>{{ comment.content }}</p>
-                            <p class="text-xs text-gray-400">By {{ comment.user.username }} at {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                            <p class="text-xs text-gray-400">Oleh {{ comment.user.username }} - {{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
                         </div>
                     {% else %}
                         <p class="text-gray-400">Belum ada komentar.</p>
@@ -87,18 +117,14 @@
                 <form action="{{ url_for('detail_product', product_id=product.id) }}" method="POST" class="ml-6 mt-4">
                     {{ comment_form.hidden_tag() }}
                     <input type="hidden" name="discussion_id" value="{{ discussion.id }}">
-                    <div class="mb-2">
-                        <textarea name="content" class="w-full p-2 border rounded" placeholder="Tulis komentar Anda..." required></textarea>
-                    </div>
-                    <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Kirim Komentar</button>
+                    <textarea name="content" class="w-full p-2 border rounded" placeholder="Tulis komentar Anda..." required></textarea>
+                    <button type="submit" class="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Kirim Komentar</button>
                 </form>
-                {% else %}
-                <p class="ml-6 text-sm text-gray-500">Login untuk memberikan komentar.</p>
                 {% endif %}
             </div>
-            {% endfor %}
-        </div>
-
+        {% endfor %}
     </div>
+
+</div>
 </body>
 {% endblock %}

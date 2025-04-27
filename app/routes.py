@@ -419,28 +419,29 @@ def view_order_status():
 @app.route('/produk/<int:product_id>', methods=['GET', 'POST'])
 @swag_from('docs/detail_product.yml')
 def detail_product(product_id):
-    # Periksa apakah produk ada di database
-    product = Product.query.get(product_id)
-    if not product:
-        flash('Produk tidak ditemukan!', 'danger')
-        return redirect(url_for('katalog_product'))
+    product = Product.query.get_or_404(product_id)
 
+    # Form-form
     form = RatingForm()
+    discussion_form = DiscussionForm()
+    comment_form = CommentForm()
 
     has_ordered = False
     previous_rating = None
 
     if current_user.is_authenticated:
-        # Memeriksa apakah pengguna sudah membeli produk ini
+        # Cek apakah user pernah beli produk ini
         has_ordered = db.session.query(OrderDetail).join(Order).filter(
             Order.user_id == current_user.id,
             OrderDetail.product_id == product_id
         ).count() > 0
 
-        # Memeriksa apakah pengguna sudah memberikan rating
+        # Cek apakah user sudah pernah kasih rating
         previous_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
 
-        if form.validate_on_submit() and has_ordered:
+    # Tangani form rating
+    if form.validate_on_submit() and 'rating' in request.form:
+        if current_user.is_authenticated and has_ordered:
             existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
             if existing_rating:
                 existing_rating.rating = form.rating.data
@@ -454,36 +455,30 @@ def detail_product(product_id):
                 )
                 db.session.add(new_rating)
             db.session.commit()
-            flash('Your rating has been submitted!', 'success')
+            flash('Ulasan Anda telah dikirim!', 'success')
+            return redirect(url_for('detail_product', product_id=product_id))
+        else:
+            flash('Anda harus membeli produk ini sebelum memberi ulasan.', 'danger')
             return redirect(url_for('detail_product', product_id=product_id))
 
-        form.rating.data = previous_rating.rating if previous_rating else None
-        form.review.data = previous_rating.review if previous_rating else None
+    # Tangani form diskusi
+    if discussion_form.validate_on_submit() and 'title' in request.form:
+        if current_user.is_authenticated:
+            new_discussion = Discussion(
+                title=discussion_form.title.data,
+                content=discussion_form.content.data,
+                product_id=product_id,
+                user_id=current_user.id
+            )
+            db.session.add(new_discussion)
+            db.session.commit()
+            flash('Diskusi berhasil diposting!', 'success')
+            return redirect(url_for('detail_product', product_id=product_id))
 
-    # Menghitung rating produk
-    ratings = Rating.query.filter_by(product_id=product_id).all()
-    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
-    rating_count = len(ratings)
-
-    # Menangani posting diskusi
-    discussion_form = DiscussionForm()
-    if discussion_form.validate_on_submit():
-        new_discussion = Discussion(
-            title=discussion_form.title.data,
-            content=discussion_form.content.data,
-            product_id=product_id,
-            user_id=current_user.id
-        )
-        db.session.add(new_discussion)
-        db.session.commit()
-        flash('Diskusi berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Menangani posting komentar
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        discussion_id = request.form.get('discussion_id')  # Ambil id diskusi dari form
-        if discussion_id:
+    # Tangani form komentar
+    if comment_form.validate_on_submit() and 'discussion_id' in request.form:
+        if current_user.is_authenticated:
+            discussion_id = request.form.get('discussion_id')
             new_comment = Comment(
                 content=comment_form.content.data,
                 discussion_id=discussion_id,
@@ -494,15 +489,17 @@ def detail_product(product_id):
             flash('Komentar berhasil diposting!', 'success')
             return redirect(url_for('detail_product', product_id=product_id))
 
-    # Fetch diskusi dan komentar yang ada
+    # Hitung statistik rating
+    ratings = Rating.query.filter_by(product_id=product_id).all()
+    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
+    rating_count = len(ratings)
+
+    # Ambil semua diskusi produk
     discussions = Discussion.query.filter_by(product_id=product_id).all()
 
-    # Mengambil komentar yang terkait dengan produk (tanpa diskusi)
-    # Filter hanya komentar yang terkait dengan produk, tanpa kaitan dengan diskusi tertentu
-    standalone_comments = Comment.query.all()
+    # Ambil info pages (kalau ada)
     info_pages = InfoPage.query.filter_by(product_id=product_id).all()
 
-    # Mengirim data ke template
     return render_template(
         'detail_product.jinja',
         product=product,
@@ -515,9 +512,9 @@ def detail_product(product_id):
         discussion_form=discussion_form,
         comment_form=comment_form,
         discussions=discussions,
-        info_pages=info_pages,
-        standalone_comments=standalone_comments  # Mengirim komentar yang tidak terkait dengan diskusi
+        info_pages=info_pages
     )
+
   
 # Route for deleting a discussion
 @app.route('/discussion/delete/<int:discussion_id>', methods=['POST'])
