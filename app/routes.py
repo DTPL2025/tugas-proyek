@@ -116,19 +116,30 @@ def katalog_product():
 @login_required
 def add_to_cart(product_id):
     product = Product.query.get_or_404(product_id)
-    # Cek apakah produk sudah ada di cart pengguna
+
+    # 🔥 Cek stok produk sebelum lanjut
+    if product.stock <= 0:
+        flash('Gagal menambahkan ke keranjang: Stok produk habis.', 'danger')
+        return redirect(url_for('katalog_product'))
+
+    # Cari produk di cart
     cart_item = Cart.query.filter_by(user_id=current_user.id, product_id=product.id).first()
     if cart_item:
-        # Jika produk sudah ada di cart, tambahkan kuantitasnya
+        # Kalau sudah ada di cart, cek apakah stok mencukupi untuk nambah 1
+        if product.stock < 1:
+            flash('Tidak dapat menambahkan lebih banyak produk: Stok tidak cukup.', 'danger')
+            return redirect(url_for('katalog_product'))
         cart_item.quantity += 1
     else:
-        # Jika produk belum ada di cart, tambahkan produk baru ke cart
         cart_item = Cart(user_id=current_user.id, product_id=product.id, quantity=1)
         db.session.add(cart_item)
+
+    # 🔥 Kurangi stok produk
+    product.stock -= 1
+
     db.session.commit()
     flash('Produk berhasil ditambahkan ke keranjang!', 'success')
     return redirect(url_for('katalog_product'))
-
 
 @app.route('/cart/update/<int:cart_item_id>', methods=['GET', 'POST'])
 @login_required
@@ -138,7 +149,27 @@ def update_cart(cart_item_id):
     form = CartUpdateForm()
 
     if form.validate_on_submit():
-        cart_item.quantity = form.quantity.data
+        new_quantity = form.quantity.data
+        old_quantity = cart_item.quantity
+        product = Product.query.get(cart_item.product_id)
+
+        if not product:
+            flash('Produk tidak ditemukan.', 'danger')
+            return redirect(url_for('view_cart'))
+
+        quantity_diff = new_quantity - old_quantity
+
+        if quantity_diff > 0:
+            # User mau tambah quantity ➔ cek stok cukup tidak
+            if product.stock < quantity_diff:
+                flash('Stok produk tidak cukup untuk memperbarui jumlah.', 'danger')
+                return redirect(url_for('view_cart'))
+            product.stock -= quantity_diff
+        elif quantity_diff < 0:
+            # User mau mengurangi quantity ➔ kembalikan stok
+            product.stock += abs(quantity_diff)
+
+        cart_item.quantity = new_quantity
         db.session.commit()
         flash('Kuantitas produk telah diperbarui!', 'success')
         return redirect(url_for('view_cart'))
@@ -287,9 +318,15 @@ def delete_cart_item(cart_item_id):
         flash('Anda tidak memiliki izin untuk menghapus item ini.', 'danger')
         return redirect(url_for('view_cart'))
 
+    # 🔥 Tambah stok produk kembali
+    product = Product.query.get(cart_item.product_id)
+    if product:
+        product.stock += cart_item.quantity
+
+    # Hapus item dari cart
     db.session.delete(cart_item)
     db.session.commit()
-    flash('Produk berhasil dihapus dari keranjang.', 'success')
+    flash('Produk berhasil dihapus dari keranjang dan stok dikembalikan.', 'success')
     return redirect(url_for('view_cart'))
 
 def save_payment_proof(uploaded_file):
@@ -370,18 +407,30 @@ def checkout():
 @app.route('/order/manage')
 @login_required
 def manage_orders():
-    if current_user.role != 'Penjual':  # Hanya penjual yang boleh mengakses halaman ini
+    if current_user.role != 'Penjual':  # Hanya penjual yang boleh akses
         flash('Akses ditolak. Halaman ini hanya untuk Penjual.', 'danger')
         return redirect(url_for('home'))
 
     status_filter = request.args.get('status')
 
-    if status_filter:
-        orders = Order.query.options(joinedload(Order.user)).filter_by(status=status_filter).all()
+    # 🔥 Cari semua order_detail produk milik penjual ini
+    order_ids = db.session.query(OrderDetail.order_id).join(Product).filter(
+        Product.seller_id == current_user.id
+    ).distinct().all()
+
+    # order_ids = list of tuple, ambil id nya
+    order_ids = [oid[0] for oid in order_ids]
+
+    if not order_ids:
+        orders = []  # Kalau gak ada, kosongkan
     else:
-        orders = Order.query.options(joinedload(Order.user)).all()
+        query = Order.query.options(joinedload(Order.user)).filter(Order.id.in_(order_ids))
+        if status_filter:
+            query = query.filter(Order.status == status_filter)
+        orders = query.all()
 
     return render_template('manage_orders.jinja', orders=orders)
+
     
 @app.route('/order/update/<int:order_id>', methods=['GET', 'POST'])
 @login_required
@@ -419,88 +468,89 @@ def view_order_status():
 @app.route('/produk/<int:product_id>', methods=['GET', 'POST'])
 @swag_from('docs/detail_product.yml')
 def detail_product(product_id):
-    # Periksa apakah produk ada di database
-    product = Product.query.get(product_id)
-    if not product:
-        flash('Produk tidak ditemukan!', 'danger')
-        return redirect(url_for('katalog_product'))
+    product = Product.query.get_or_404(product_id)
 
+    # Forms
     form = RatingForm()
+    discussion_form = DiscussionForm()
+    comment_form = CommentForm()
 
     has_ordered = False
     previous_rating = None
 
     if current_user.is_authenticated:
-        # Memeriksa apakah pengguna sudah membeli produk ini
         has_ordered = db.session.query(OrderDetail).join(Order).filter(
             Order.user_id == current_user.id,
             OrderDetail.product_id == product_id
         ).count() > 0
 
-        # Memeriksa apakah pengguna sudah memberikan rating
         previous_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
 
-        if form.validate_on_submit() and has_ordered:
-            existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
-            if existing_rating:
-                existing_rating.rating = form.rating.data
-                existing_rating.review = form.review.data
-            else:
-                new_rating = Rating(
-                    user_id=current_user.id,
+    # 🔥 Handle Form POST
+    if request.method == 'POST':
+        if 'rating' in request.form:
+            # Form Rating
+            if form.validate_on_submit() and has_ordered:
+                existing_rating = Rating.query.filter_by(user_id=current_user.id, product_id=product_id).first()
+                if existing_rating:
+                    existing_rating.rating = form.rating.data
+                    existing_rating.review = form.review.data
+                else:
+                    new_rating = Rating(
+                        user_id=current_user.id,
+                        product_id=product_id,
+                        rating=form.rating.data,
+                        review=form.review.data
+                    )
+                    db.session.add(new_rating)
+                db.session.commit()
+                flash('Ulasan Anda telah dikirim!', 'success')
+                return redirect(url_for('detail_product', product_id=product_id))
+
+        elif 'title' in request.form:
+            # Form Diskusi
+            if discussion_form.validate_on_submit():
+                new_discussion = Discussion(
+                    title=discussion_form.title.data,
+                    content=discussion_form.content.data,
                     product_id=product_id,
-                    rating=form.rating.data,
-                    review=form.review.data
+                    user_id=current_user.id
                 )
-                db.session.add(new_rating)
-            db.session.commit()
-            flash('Your rating has been submitted!', 'success')
-            return redirect(url_for('detail_product', product_id=product_id))
+                db.session.add(new_discussion)
+                db.session.commit()
+                flash('Diskusi berhasil diposting!', 'success')
+                return redirect(url_for('detail_product', product_id=product_id))
 
-        form.rating.data = previous_rating.rating if previous_rating else None
-        form.review.data = previous_rating.review if previous_rating else None
+        elif 'discussion_id' in request.form:
+            # Form Komentar
+            if comment_form.validate_on_submit():
+                discussion_id = request.form.get('discussion_id')
+                new_comment = Comment(
+                    content=comment_form.content.data,
+                    discussion_id=discussion_id,
+                    user_id=current_user.id
+                )
+                db.session.add(new_comment)
+                db.session.commit()
+                flash('Komentar berhasil diposting!', 'success')
+                return redirect(url_for('detail_product', product_id=product_id))
 
-    # Menghitung rating produk
+    # 🔥 Handle GET (load halaman)
+    filter_diskusi = request.args.get('filter_diskusi', 'terbaru')
+
+    if filter_diskusi == 'populer':
+        discussions = db.session.query(Discussion).filter_by(product_id=product_id)\
+            .outerjoin(Comment).group_by(Discussion.id)\
+            .order_by(db.func.count(Comment.id).desc(), Discussion.created_at.desc()).all()
+    else:
+        discussions = Discussion.query.filter_by(product_id=product_id)\
+            .order_by(Discussion.created_at.desc()).all()
+
     ratings = Rating.query.filter_by(product_id=product_id).all()
     average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
     rating_count = len(ratings)
-
-    # Menangani posting diskusi
-    discussion_form = DiscussionForm()
-    if discussion_form.validate_on_submit():
-        new_discussion = Discussion(
-            title=discussion_form.title.data,
-            content=discussion_form.content.data,
-            product_id=product_id,
-            user_id=current_user.id
-        )
-        db.session.add(new_discussion)
-        db.session.commit()
-        flash('Diskusi berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Menangani posting komentar
-    comment_form = CommentForm()
-    if comment_form.validate_on_submit():
-        new_comment = Comment(
-            content=comment_form.content.data,
-            product_id=product_id,  # Menyambungkan komentar langsung dengan produk
-            user_id=current_user.id
-        )
-        db.session.add(new_comment)
-        db.session.commit()
-        flash('Komentar berhasil diposting!', 'success')
-        return redirect(url_for('detail_product', product_id=product_id))
-
-    # Fetch diskusi dan komentar yang ada
-    discussions = Discussion.query.filter_by(product_id=product_id).all()
-
-    # Mengambil komentar yang terkait dengan produk (tanpa diskusi)
-    # Filter hanya komentar yang terkait dengan produk, tanpa kaitan dengan diskusi tertentu
-    standalone_comments = Comment.query.all()
     info_pages = InfoPage.query.filter_by(product_id=product_id).all()
 
-    # Mengirim data ke template
     return render_template(
         'detail_product.jinja',
         product=product,
@@ -514,36 +564,85 @@ def detail_product(product_id):
         comment_form=comment_form,
         discussions=discussions,
         info_pages=info_pages,
-        standalone_comments=standalone_comments  # Mengirim komentar yang tidak terkait dengan diskusi
+        filter_diskusi=filter_diskusi
     )
+
+
+
+    # Tangani form diskusi
+    if discussion_form.validate_on_submit() and 'title' in request.form:
+        if current_user.is_authenticated:
+            new_discussion = Discussion(
+                title=discussion_form.title.data,
+                content=discussion_form.content.data,
+                product_id=product_id,
+                user_id=current_user.id
+            )
+            db.session.add(new_discussion)
+            db.session.commit()
+            flash('Diskusi berhasil diposting!', 'success')
+            return redirect(url_for('detail_product', product_id=product_id))
+
+    # Tangani form komentar
+    if comment_form.validate_on_submit() and 'discussion_id' in request.form:
+        if current_user.is_authenticated:
+            discussion_id = request.form.get('discussion_id')
+            new_comment = Comment(
+                content=comment_form.content.data,
+                discussion_id=discussion_id,
+                user_id=current_user.id
+            )
+            db.session.add(new_comment)
+            db.session.commit()
+            flash('Komentar berhasil diposting!', 'success')
+            return redirect(url_for('detail_product', product_id=product_id))
+
+    # Hitung statistik rating
+    ratings = Rating.query.filter_by(product_id=product_id).all()
+    average_rating = sum(r.rating for r in ratings) / len(ratings) if ratings else 0
+    rating_count = len(ratings)
+
+    # Ambil semua diskusi produk
+    discussions = Discussion.query.filter_by(product_id=product_id).all()
+
+    # Ambil info pages (kalau ada)
+    info_pages = InfoPage.query.filter_by(product_id=product_id).all()
+
+    return render_template(
+        'detail_product.jinja',
+        product=product,
+        form=form,
+        ratings=ratings,
+        average_rating=average_rating,
+        rating_count=rating_count,
+        has_ordered=has_ordered,
+        previous_rating=previous_rating,
+        discussion_form=discussion_form,
+        comment_form=comment_form,
+        discussions=discussions,
+        info_pages=info_pages
+    )
+
   
 # Route for deleting a discussion
 @app.route('/discussion/delete/<int:discussion_id>', methods=['POST'])
 @login_required
 def delete_discussion(discussion_id):
     discussion = Discussion.query.get_or_404(discussion_id)
-    if discussion.user_id == current_user.id:  # Pastikan hanya pemilik diskusi yang bisa menghapus
-        db.session.delete(discussion)
-        db.session.commit()
-        flash('Diskusi berhasil dihapus!', 'success')
-    else:
-        flash('Anda tidak memiliki izin untuk menghapus diskusi ini.', 'danger')
-    return redirect(url_for('detail_product', product_id=discussion.product_id))
-    discussion = Discussion.query.get_or_404(discussion_id)
 
-    # Check if the current user is the owner of the discussion
     if discussion.user_id != current_user.id:
         flash('Anda tidak memiliki izin untuk menghapus diskusi ini.', 'danger')
         return redirect(url_for('detail_product', product_id=discussion.product_id))
 
-    # Optionally delete all comments manually if you want them removed
+    # Hapus semua komentar di diskusi ini
     Comment.query.filter_by(discussion_id=discussion.id).delete()
 
-    # Delete the discussion
+    # Hapus diskusi
     db.session.delete(discussion)
     db.session.commit()
-    flash('Diskusi berhasil dihapus!', 'success')
+    flash('Diskusi dan semua komentarnya berhasil dihapus.', 'success')
     return redirect(url_for('detail_product', product_id=discussion.product_id))
+
 # Route for editing a discussion
 @app.route('/discussion/edit/<int:discussion_id>', methods=['GET', 'POST'])
 @login_required
@@ -568,9 +667,17 @@ def edit_discussion(discussion_id):
 @login_required
 def delete_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
-    product_id = comment.product_id  # Pastikan atribut ini ada
+
+    # Pastikan hanya pemilik komentar yang bisa menghapus
+    if comment.user_id != current_user.id:
+        flash('Anda tidak memiliki izin untuk menghapus komentar ini.', 'danger')
+        return redirect(url_for('home'))
+
+    product_id = comment.discussion.product.id  # Ambil id produk lewat diskusi
+
     db.session.delete(comment)
     db.session.commit()
+    flash('Komentar berhasil dihapus.', 'success')
     return redirect(url_for('detail_product', product_id=product_id))
 
 @app.route('/info_page')
@@ -788,3 +895,20 @@ def analytic_pembeli():
         total_omset=total_omset,
         total_penjualan=total_penjualan
     )
+
+@app.route('/informasi')
+def view_informasi():
+    category = request.args.get('category')
+    query = request.args.get('q')
+
+    info_query = InfoPage.query
+
+    if category:
+        info_query = info_query.filter_by(category=category)
+
+    if query:
+        info_query = info_query.filter(InfoPage.content.ilike(f'%{query}%'))
+
+    info_pages = info_query.all()
+
+    return render_template('view_informasi.jinja', info_pages=info_pages, query=query or '', category=category)
